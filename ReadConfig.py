@@ -8,7 +8,7 @@ class ReadConfig:
         self.__Read()
 
     def __Read(self):
-        with open('Config.dt', mode = 'r', encoding='utf-8') as f:
+        with open('Config.dt', mode='r', encoding='utf-8') as f:
             for name, item in zip(self.names, f.readlines()):
                 self.config[name] = item
 
