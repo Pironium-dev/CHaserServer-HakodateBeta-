@@ -3,7 +3,7 @@ from typing import Dict
 
 class ReadConfig:
     def __init__(self):
-        self.names: list = ('CoolPort', 'HotPort')
+        self.names: list = ('CoolPort', 'HotPort', 'ProgressOfGame', 'TimeOut', 'AntiBotMode')
         self.config: Dict = {}
         self.__Read()
 
