@@ -10,7 +10,7 @@ class ReadConfig:
     def __Read(self):
         with open('Config.dt', mode='r', encoding='utf-8') as f:
             for name, item in zip(self.names, f.readlines()):
-                self.config[name] = item
+                self.config[name] = int(item)
 
     def output_config(self):
         return self.config
