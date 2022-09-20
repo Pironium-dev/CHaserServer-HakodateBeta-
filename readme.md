@@ -20,7 +20,10 @@ CHaserのサーバを見る
 
 ### ReadConfig.py
 
-Config.dt(中身はtxt)に書き込み＆読み込み
+Config.dt(中身はtxt)に書き込み＆読み込み  
+end でセーブせずに終了  
+save でセーブして終了  
+インデックス入力 → 値の入力で変更
 
 ### Communication.py
 
