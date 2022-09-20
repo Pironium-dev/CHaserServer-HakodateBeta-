@@ -30,9 +30,13 @@ Config.dt(中身はtxt)に書き込み＆読み込み
 
 未定
 
+### ChangeConfig.py
+
+CLIで変更する
+
 ## Config.dtの中身
 
-UFT-8で書く  
+jsonで書く  
 上から順番に  
 
 - Coolのポート番号

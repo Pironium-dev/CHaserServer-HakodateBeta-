@@ -1,5 +1,7 @@
-10001
-10002
-100
-10000
-0
+{
+    "CoolPort": 10001,
+    "HotPort": 10002,
+    "ProgressOfGame": 100,
+    "TimeOut": 10000,
+    "AntiBotMode": 0
+}
