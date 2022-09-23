@@ -128,3 +128,10 @@ class Client:
 
     def put_down(self):
         return self.__order("pd")
+
+
+bot = Client()
+while True:
+    bot.get_ready()
+    bot.walk_up()
+    bot.walk_up()
