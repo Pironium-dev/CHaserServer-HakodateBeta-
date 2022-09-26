@@ -1,16 +1,15 @@
 from typing import Dict
+import json
 
 
 class ReadConfig:
     def __init__(self):
-        self.names: list = ('CoolPort', 'HotPort', 'ProgressOfGame', 'TimeOut', 'AntiBotMode')
         self.config: Dict = {}
-        self.__Read()
+        self.__read()
 
-    def __Read(self):
+    def __read(self):
         with open('Config.dt', mode='r', encoding='utf-8') as f:
-            for name, item in zip(self.names, f.readlines()):
-                self.config[name] = int(item)
+            self.config = json.load(f)
 
     def output_config(self):
         return self.config
