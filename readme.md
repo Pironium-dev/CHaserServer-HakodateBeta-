@@ -5,14 +5,15 @@ Chaser のサーバを作りたい
 
 ## 資料
 
-CHaserのサーバを見る  
+CHaserのサーバを見る[参照](http://www.procon-asahikawa.org/files/2020U16rule.pdf)  
 クライアントのプログラムも見る
 
 ## プログラム分け
 
 ### Main.py
 
-他プログラムの読み込み＆制御
+ゲーム本体（ロジックもここ）  
+クライアントとの通信
 
 ### Cliant.py
 
@@ -24,10 +25,6 @@ Config.dt(中身はtxt)に書き込み＆読み込み
 end でセーブせずに終了  
 save でセーブして終了  
 インデックス入力 → 値の入力で変更
-
-### Communication.py
-
-クライアントとの通信
 
 ### GUI.py
 
