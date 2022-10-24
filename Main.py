@@ -83,7 +83,6 @@ class Game:
     def print_map(self):
         lock.acquire()
         for i, y in enumerate(self.map):
-            time.sleep(1)
             for j, x in enumerate(y):
                 if self.posx[0] == j and self.posy[0] == i:
                     print('C', end=' ')
@@ -93,6 +92,7 @@ class Game:
                     print(x, end=' ')
             print('')
         print('')
+        time.sleep(config['ProgressOfGame']/1000)
         lock.release()
 
 
@@ -113,7 +113,6 @@ def Receiver(pnumber, identifier):
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     # server_socket.bind((socket.gethostname(), pnumber))
     server_socket.bind(('', pnumber))
-    server_socket.settimeout(3)
     server_socket.listen()
     (tocliant_socket, address) = server_socket.accept()
 

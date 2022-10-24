@@ -136,12 +136,8 @@ class Client:
         return self.__order("pd")
 
 
-cool = Client('50001')
-time.sleep(0.5)
-hot = Client('50002')
+cool = Client('2010')
 
 while True:
     cool.get_ready()
     cool.walk_down()
-    hot.get_ready()
-    hot.walk_down()
