@@ -1,12 +1,15 @@
 import socket
 import threading
 import time
+
 from ReadConfig import ReadConfig
 
 
 class GameRuleError(Exception):
     pass
 
+
+config = ReadConfig().output_config()
 
 def start_game():
     input('Ready?')
@@ -95,7 +98,6 @@ class Game:
         time.sleep(config['ProgressOfGame']/1000)
         lock.release()
 
-
 def Receiver(pnumber, identifier):
     """クライアントからの通信を受け取る
 
@@ -108,22 +110,32 @@ def Receiver(pnumber, identifier):
         _type_: _description_
     """
     global cool_event, hot_event, barrier, is_started
+    loc = local()
     mode = 0
     name = ''
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # server_socket.bind((socket.gethostname(), pnumber))
-    server_socket.bind(('', pnumber))
-    server_socket.listen()
-    (tocliant_socket, address) = server_socket.accept()
-
-    def receive() -> str:
+    
+    def receive(lo):
         s = ''
         while '\r\n' not in s:
             s += tocliant_socket.recv(2048).decode('utf-8')
-        return s[:-2]
+        lo.output += s[:-2]
 
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.bind(('', pnumber))
+    server_socket.listen()
+    (tocliant_socket, address) = server_socket.accept()
     try:
         while True:
+            if mode != 1:
+                loc.output = ''
+                thread = threading.Thread(target=receive, args=(loc,))
+                thread.start()
+                if mode == 0:
+                    thread.join()
+                else:
+                    thread.join(timeout=config['TimeOut'] / 1000)
+                if not loc.output:
+                    raise GameRuleError('タイムアウトしました')
             '''
                 mode 0:nameの取得
                 mode 1:@送信待ち
@@ -133,7 +145,7 @@ def Receiver(pnumber, identifier):
             '''
             match mode:
                 case 0:
-                    name = receive()
+                    name = loc.output
                     print(f'{name} から接続されました')
                     barrier.wait()
                     mode += 1
@@ -150,7 +162,7 @@ def Receiver(pnumber, identifier):
                     tocliant_socket.sendall(b'@')
                     mode += 1
                 case 2:
-                    if receive() == 'gr':
+                    if loc.output == 'gr':
                         tocliant_socket.sendall((s := game.cliant_act('gr', identifier)).encode('utf-8'))
                         if s[0] == '0':
                             raise GameRuleError('ブロックに重なりました')
@@ -158,7 +170,7 @@ def Receiver(pnumber, identifier):
                     else:
                         raise GameRuleError('get_readyをしませんでした')
                 case 3:
-                    if (c := receive()) != 'gr':
+                    if (c := loc.output) != 'gr':
                         tocliant_socket.sendall((s := game.cliant_act(c, identifier)).encode('utf-8'))
                         if s[0] == '0':
                             raise GameRuleError('ブロックに重なりました')
@@ -167,7 +179,7 @@ def Receiver(pnumber, identifier):
                         raise GameRuleError('get_readyを二回連続でしました')
                     mode += 1
                 case 4:
-                    if receive() == '#':
+                    if loc.output == '#':
                         if identifier == 0:
                             hot_event.set()
                         else:
@@ -183,10 +195,20 @@ def Receiver(pnumber, identifier):
         exit(0)
 
 
+class local:
+    pass
+
+
+'''
+    s = ''
+    while '\r\n' not in s:
+        s += socket.recv(2048).decode('utf-8')
+    return s[:-2]
+'''
+
+
 if __name__ == '__main__':
     game = Game()
-    config = ReadConfig().output_config()
-
     is_started = True
     barrier = threading.Barrier(2, action=start_game)
 

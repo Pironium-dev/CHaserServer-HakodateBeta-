@@ -3,7 +3,7 @@ Main.pyのテスト用
 '''
 import socket
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-address = ('127.0.0.1', 2009)
+address = ('127.0.0.1', 2010)
 client.connect((address))
 while True:
     inp = input().strip()

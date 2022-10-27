@@ -6,6 +6,7 @@ import socket
 import ipaddress
 import os
 import time
+import sys
 
 
 class Client:
@@ -136,7 +137,7 @@ class Client:
         return self.__order("pd")
 
 
-cool = Client('2010')
+cool = Client(sys.argv[1])
 
 while True:
     cool.get_ready()

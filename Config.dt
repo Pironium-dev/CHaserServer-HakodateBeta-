@@ -1,6 +1,6 @@
 {
-    "CoolPort": 50001,
-    "HotPort": 50002,
+    "CoolPort": 2009,
+    "HotPort": 2010,
     "ProgressOfGame": 100,
     "TimeOut": 20000,
     "AntiBotMode": 0
