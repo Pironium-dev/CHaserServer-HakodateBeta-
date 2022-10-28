@@ -3,6 +3,11 @@
 
 Chaser のサーバを作りたい
 
+## 使い方
+
+Changeconfig.pyで設定変更(下記参照)
+Maim.pyを実行後はほぼ同じ。
+
 ## 資料
 
 CHaserのサーバを見る[参照](http://www.procon-asahikawa.org/files/2020U16rule.pdf)  
@@ -22,9 +27,6 @@ CHaserのサーバを見る[参照](http://www.procon-asahikawa.org/files/2020U1
 ### ReadConfig.py
 
 Config.dt(中身はtxt)に書き込み＆読み込み  
-end でセーブせずに終了  
-save でセーブして終了  
-インデックス入力 → 値の入力で変更
 
 ### GUI.py
 
@@ -33,6 +35,9 @@ save でセーブして終了
 ### ChangeConfig.py
 
 CLIで変更する
+end でセーブせずに終了  
+save でセーブして終了  
+インデックス入力 → 値の入力で変更
 
 ## Config.dtの中身
 
