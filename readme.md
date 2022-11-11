@@ -6,7 +6,7 @@ Chaser のサーバを作りたい
 ## 使い方
 
 Changeconfig.pyで設定変更(下記参照)
-Maim.pyを実行後はほぼ同じ。
+Maim.pyを実行後、CoolとHotを接続し、エンターでスタート
 
 ## 資料
 
