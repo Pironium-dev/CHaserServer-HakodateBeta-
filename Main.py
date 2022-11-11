@@ -98,7 +98,7 @@ class Game:
         time.sleep(config['ProgressOfGame']/1000)
         lock.release()
 
-def Receiver(pnumber, identifier):
+def Receiver(pnumber, identifier, bot_type):
     """クライアントからの通信を受け取る
 
     Args:
@@ -106,8 +106,6 @@ def Receiver(pnumber, identifier):
         identifier (int): 識別用
         0がcool, 1がhot
 
-    Returns:
-        _type_: _description_
     """
     global cool_event, hot_event, barrier, is_started
     loc = local()
@@ -120,73 +118,83 @@ def Receiver(pnumber, identifier):
             s += tocliant_socket.recv(2048).decode('utf-8')
         lo.output += s[:-2]
 
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.bind(('', pnumber))
-    server_socket.listen()
-    (tocliant_socket, address) = server_socket.accept()
     try:
-        while True:
-            if mode != 1:
-                loc.output = ''
-                thread = threading.Thread(target=receive, args=(loc,))
-                thread.start()
-                if mode == 0:
-                    thread.join()
-                else:
-                    thread.join(timeout=config['TimeOut'] / 1000)
-                if not loc.output:
-                    raise GameRuleError('タイムアウトしました')
-            '''
-                mode 0:nameの取得
-                mode 1:@送信待ち
-                mode 2:grの取得
-                mode 3:動作の取得
-                mode 4:#の取得
-            '''
-            match mode:
-                case 0:
-                    name = loc.output
-                    print(f'{name} から接続されました')
-                    barrier.wait()
-                    mode += 1
-                case 1:
-                    if identifier == 0:
-                        if is_started:
-                            is_started = False
+        match bot_type:
+            case 0:
+                server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                server_socket.bind(('', pnumber))
+                server_socket.listen()
+                (tocliant_socket, address) = server_socket.accept()
+                while True:
+                    if mode != 1:
+                        loc.output = ''
+                        thread = threading.Thread(target=receive, args=(loc,))
+                        thread.start()
+                        if mode == 0:
+                            thread.join()
                         else:
-                            cool_event.clear()
-                        cool_event.wait()
-                    else:
-                        hot_event.clear()
-                        hot_event.wait()
-                    tocliant_socket.sendall(b'@')
-                    mode += 1
-                case 2:
-                    if loc.output == 'gr':
-                        tocliant_socket.sendall((s := game.cliant_act('gr', identifier)).encode('utf-8'))
-                        if s[0] == '0':
-                            raise GameRuleError('ブロックに重なりました')
-                        mode += 1
-                    else:
-                        raise GameRuleError('get_readyをしませんでした')
-                case 3:
-                    if (c := loc.output) != 'gr':
-                        tocliant_socket.sendall((s := game.cliant_act(c, identifier)).encode('utf-8'))
-                        if s[0] == '0':
-                            raise GameRuleError('ブロックに重なりました')
-                        game.print_map()
-                    else:
-                        raise GameRuleError('get_readyを二回連続でしました')
-                    mode += 1
-                case 4:
-                    if loc.output == '#':
-                        if identifier == 0:
-                            hot_event.set()
-                        else:
-                            cool_event.set()
-                        mode = 1
-                    else:
-                        raise GameRuleError('行動を二回連続でしました')
+                            thread.join(timeout=config['TimeOut'] / 1000)
+                        if not loc.output:
+                            raise GameRuleError('タイムアウトしました')
+                    '''
+                        mode 0:nameの取得
+                        mode 1:@送信待ち
+                        mode 2:grの取得
+                        mode 3:動作の取得
+                        mode 4:#の取得
+                    '''
+                    match mode:
+                        case 0:
+                            name = loc.output
+                            print(f'{name} から接続されました')
+                            barrier.wait()
+                            mode += 1
+                        case 1:
+                            if identifier == 0:
+                                if is_started:
+                                    is_started = False
+                                else:
+                                    cool_event.clear()
+                                cool_event.wait()
+                            else:
+                                hot_event.clear()
+                                hot_event.wait()
+                            tocliant_socket.sendall(b'@')
+                            mode += 1
+                        case 2:
+                            if loc.output == 'gr':
+                                tocliant_socket.sendall((s := game.cliant_act('gr', identifier)).encode('utf-8'))
+                                if s[0] == '0':
+                                    raise GameRuleError('ブロックに重なりました')
+                                mode += 1
+                            else:
+                                raise GameRuleError('get_readyをしませんでした')
+                        case 3:
+                            if (c := loc.output) != 'gr':
+                                tocliant_socket.sendall((s := game.cliant_act(c, identifier)).encode('utf-8'))
+                                if s[0] == '0':
+                                    raise GameRuleError('ブロックに重なりました')
+                                game.print_map()
+                            else:
+                                raise GameRuleError('get_readyを二回連続でしました')
+                            mode += 1
+                        case 4:
+                            if loc.output == '#':
+                                if identifier == 0:
+                                    hot_event.set()
+                                else:
+                                    cool_event.set()
+                                mode = 1
+                            else:
+                                raise GameRuleError('行動を二回連続でしました')
+            case 1:
+                barrier.wait()
+                while True:
+                    hot_event.clear()
+                    hot_event.wait()
+                    game.cliant_act('gr', identifier)
+                    game.cliant_act('lu', identifier)
+                    cool_event.set()
     except OSError:
         server_socket.close()
         tocliant_socket.close()
@@ -212,14 +220,13 @@ if __name__ == '__main__':
     barrier = threading.Barrier(2, action=start_game)
 
     lock = threading.Lock()
+    print(config['AntiBotMode'])
 
     cool_event = threading.Event()
     hot_event = threading.Event()
-    cool_server = threading.Thread(target=Receiver, args=(config['CoolPort'], 0))
-    hot_server = threading.Thread(target=Receiver, args=(config['HotPort'], 1))
+    cool_server = threading.Thread(target=Receiver, args=(config['CoolPort'], 0, 0))
+    hot_server = threading.Thread(target=Receiver, args=(config['HotPort'], 1, config['AntiBotMode']))
 
     cool_server.start()
     hot_server.start()
     cool_event.set()
-    while True:
-        time.sleep(1)
