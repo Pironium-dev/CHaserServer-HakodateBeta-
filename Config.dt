@@ -3,5 +3,5 @@
     "HotPort": 2010,
     "ProgressOfGame": 100,
     "TimeOut": 20000,
-    "AntiBotMode": 0
+    "AntiBotMode": 2
 }
