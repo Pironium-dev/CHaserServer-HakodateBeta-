@@ -230,3 +230,5 @@ if __name__ == '__main__':
     cool_server.start()
     hot_server.start()
     cool_event.set()
+    while True:
+        time.sleep(1)
