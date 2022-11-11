@@ -1,6 +1,7 @@
 import socket
 import threading
 import time
+import subprocess
 
 from ReadConfig import ReadConfig
 
@@ -117,10 +118,13 @@ def Receiver(pnumber, identifier, bot_type):
         while '\r\n' not in s:
             s += tocliant_socket.recv(2048).decode('utf-8')
         lo.output += s[:-2]
+    
+    if bot_type == 2:
+        subprocess.Popen(['start', 'Hot.bat'], shell=True)
 
     try:
         match bot_type:
-            case 0:
+            case 0 | 2:
                 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 server_socket.bind(('', pnumber))
                 server_socket.listen()
@@ -220,7 +224,6 @@ if __name__ == '__main__':
     barrier = threading.Barrier(2, action=start_game)
 
     lock = threading.Lock()
-    print(config['AntiBotMode'])
 
     cool_event = threading.Event()
     hot_event = threading.Event()
