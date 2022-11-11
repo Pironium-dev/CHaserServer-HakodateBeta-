@@ -1,32 +1,35 @@
 
 # 概要
 
-Chaser のサーバを作りたい
+旭川版 CHaser (※)のサーバを自分で作りたい。従来のものと比べ、チェイサーの学習を始める人、教える人に更に役立つものとしたい。
+[※ CHaser には、全国情報技術教育研究会版とそれを簡略化した旭川版があります。](https://ja.wikipedia.org/wiki/CHaser)
 
 ## 使い方
 
-Changeconfig.pyで設定変更(下記参照)
-Maim.pyを実行後、CoolとHotを接続し、エンターでスタート
+Changeconfig.py を起動し、設定変更(下記参照)をしたあと、
+Main.py を実行。Cool と Hot のクライアントからの接続を確認したら、エンターでスタート
 
 ## 資料
 
-CHaserのサーバを見る[参照](http://www.procon-asahikawa.org/files/2020U16rule.pdf)  
+旭川版 CHaserのサーバを見る[参照](http://www.procon-asahikawa.org/files/2020U16rule.pdf)  
 クライアントのプログラムも見る
 
 ## プログラム分け
 
 ### Main.py
 
-ゲーム本体（ロジックもここ）  
+ゲーム本体（ロジックもここ）
 クライアントとの通信
 
 ### Cliant.py
 
-たたき台にするクライアントのプログラム
+動作確認用の、クライアントのデモプログラム
+クライアント側のプログラムを用意していない方は、
+こちらからサーバに接続してください。
 
 ### ReadConfig.py
 
-Config.dt(中身はtxt)に書き込み＆読み込み  
+設定ファイルである Config.dt (中身はtxt) の書き込み＆読み込みを行う
 
 ### GUI.py
 
@@ -34,14 +37,17 @@ Config.dt(中身はtxt)に書き込み＆読み込み
 
 ### ChangeConfig.py
 
-CLIで変更する
-end でセーブせずに終了  
-save でセーブして終了  
+設定ファイルの作成・書き換えを行う
+CLI が起動するので、内容に従って設定ファイルを作成・書き換えをしてほしい
 インデックス入力 → 値の入力で変更
+save でセーブして終了  
+end でセーブせずに終了
 
-## Config.dtの中身
+## Config.dt の中身
 
-jsonで書く  
+通常は ChangeConfig.py から作成してほしいが、
+json 形式なので、直接書き換えることも可能。
+
 上から順番に  
 
 - Coolのポート番号
@@ -55,7 +61,7 @@ jsonで書く
 WireSharkで通信を傍受した結果の改変  
 
 - Client: C  
-- Server: 無印
+- Server: (無印)
 
 ### 分析
 
