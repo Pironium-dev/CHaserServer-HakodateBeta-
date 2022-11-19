@@ -1,7 +1,9 @@
 {
-    "CoolPort": 2009,
-    "HotPort": 2010,
-    "ProgressOfGame": 100,
+    "CoolPort": 2010,
+    "HotPort": 2011,
+    "GameSpeed": 100,
     "TimeOut": 20000,
-    "AntiBotMode": 2
+    "AntiBotMode": "Off",
+    "LogPath": "",
+    "StagePath": ""
 }

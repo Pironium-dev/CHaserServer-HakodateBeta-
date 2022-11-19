@@ -14,6 +14,10 @@ class ReadConfig:
     def output_config(self):
         return self.config
 
+    def save(self, ip):
+        with open('Config.dt', 'w') as f:
+            json.dump(ip, f, indent=4)
+
 
 if __name__ == '__main__':
     test = ReadConfig()

@@ -1,7 +1,7 @@
 import socket
+import subprocess
 import threading
 import time
-import subprocess
 
 from ReadConfig import ReadConfig
 
@@ -96,7 +96,7 @@ class Game:
                     print(x, end=' ')
             print('')
         print('')
-        time.sleep(config['ProgressOfGame']/1000)
+        time.sleep(config['GameSpeed']/1000)
         lock.release()
 
 def Receiver(pnumber, identifier, bot_type):
@@ -119,12 +119,16 @@ def Receiver(pnumber, identifier, bot_type):
             s += tocliant_socket.recv(2048).decode('utf-8')
         lo.output += s[:-2]
     
-    if bot_type == 2:
+    if bot_type == 'Bot':
         subprocess.Popen(['start', 'Hot.bat'], shell=True)
+    
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.bind(('', pnumber))
+    tocliant_socket = socket.socket()
 
     try:
         match bot_type:
-            case 0 | 2:
+            case 'Off' | 'Bot':
                 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 server_socket.bind(('', pnumber))
                 server_socket.listen()
@@ -191,7 +195,7 @@ def Receiver(pnumber, identifier, bot_type):
                                 mode = 1
                             else:
                                 raise GameRuleError('行動を二回連続でしました')
-            case 1:
+            case 'Stay':
                 barrier.wait()
                 while True:
                     hot_event.clear()
@@ -208,15 +212,9 @@ def Receiver(pnumber, identifier, bot_type):
 
 
 class local:
-    pass
+    def __init__(self) -> None:
+        self.output = ''
 
-
-'''
-    s = ''
-    while '\r\n' not in s:
-        s += socket.recv(2048).decode('utf-8')
-    return s[:-2]
-'''
 
 if __name__ == '__main__':
     game = Game()
@@ -227,7 +225,7 @@ if __name__ == '__main__':
 
     cool_event = threading.Event()
     hot_event = threading.Event()
-    cool_server = threading.Thread(target=Receiver, args=(config['CoolPort'], 0, 0))
+    cool_server = threading.Thread(target=Receiver, args=(config['CoolPort'], 0, 'Off'))
     hot_server = threading.Thread(target=Receiver, args=(config['HotPort'], 1, config['AntiBotMode']))
 
     cool_server.start()
