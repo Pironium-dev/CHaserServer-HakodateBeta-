@@ -1,12 +1,16 @@
 import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
+import glob
+import os
 import ReadConfig
 
 class change_config(tk.Frame):
     def __init__(self, master):
         self.CONFIG = ReadConfig.ReadConfig()
         self.game_config = self.CONFIG.output_config()
+        self.stage_names = []
+        
         tk.Frame.__init__(self, master=master)
         master.title('Config')
         
@@ -45,6 +49,7 @@ class change_config(tk.Frame):
         self.bot_mode_combobox = ttk.Combobox(self.game_frame, values=['Off', 'Stay', 'Bot'], state='readonly')
         self.bot_mode_combobox.set(str(self.game_config['AntiBotMode']))
         self.stage_combobox = ttk.Combobox(self.game_frame, state='readonly')
+        self.stage_combobox.set(self.game_config['NextStage'])
         
         self.speed_label.pack()
         self.speed_entry.pack()
@@ -57,6 +62,8 @@ class change_config(tk.Frame):
         
         self.log_path = self.game_config['LogPath']
         self.stage_path = self.game_config['StagePath']
+        self.stage_select()
+        
         self.log_path_button = tk.Button(self.folder_frame, text='Log出力位置の変更', command=self.log_changed)
         self.stage_path_label = tk.Button(self.folder_frame, text='ステージのフォルダの変更', command=self.stage_changed)
         self.log_path_button.pack()
@@ -79,6 +86,7 @@ class change_config(tk.Frame):
         self.game_config['AntiBotMode'] = self.bot_mode_combobox.get()
         self.game_config['LogPath'] = self.log_path
         self.game_config['StagePath'] = self.stage_path
+        self.game_config['NextStage'] = self.stage_combobox.get()
         self.CONFIG.save(self.game_config)
         self.master.destroy()
     
@@ -86,6 +94,14 @@ class change_config(tk.Frame):
         self.log_path = filedialog.askdirectory()
     def stage_changed(self):
         self.stage_path = filedialog.askdirectory()
+        self.stage_select()
+    
+    def stage_select(self):
+        self.stage_names = []
+        for i in glob.glob(self.stage_path + r'/*.CHmap'):
+            self.stage_names.append(os.path.basename(i[:-6]))
+        self.stage_combobox['values'] = ['Random'] + self.stage_names
+
 
 
 if __name__ == '__main__':

@@ -1,9 +1,10 @@
 {
-    "CoolPort": 2010,
-    "HotPort": 2011,
+    "CoolPort": 2009,
+    "HotPort": 2010,
     "GameSpeed": 100,
     "TimeOut": 20000,
     "AntiBotMode": "Off",
     "LogPath": "",
-    "StagePath": ""
+    "StagePath": "",
+    "NextStage": "Random"
 }
