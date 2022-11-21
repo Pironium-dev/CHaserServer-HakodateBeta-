@@ -13,7 +13,7 @@ class GameRuleError(Exception):
 config = ReadConfig().output_config()
 
 def start_game():
-    input('Ready?')
+    input('Press Enter')
     print('FIGHT')
 
 
