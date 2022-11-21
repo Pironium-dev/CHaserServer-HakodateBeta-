@@ -1,1 +1,1 @@
-start testCliant.py 2010
+python testCliant.py 2010

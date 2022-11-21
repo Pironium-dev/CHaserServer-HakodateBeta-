@@ -6,7 +6,7 @@
 
 ## 使い方
 
-Changeconfig.py を起動し、設定変更(下記参照)をしたあと、
+GUIChangeConfig.py を起動し、設定変更(下記参照)をしたあと、
 Main.py を実行。Cool と Hot のクライアントからの接続を確認したら、エンターでスタート
 
 ## 資料
