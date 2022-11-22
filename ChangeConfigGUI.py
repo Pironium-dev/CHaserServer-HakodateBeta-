@@ -100,7 +100,7 @@ class change_config(tk.Frame):
         self.stage_names = []
         for i in glob.glob(self.stage_path + r'/*.CHmap'):
             self.stage_names.append(os.path.basename(i[:-6]))
-        self.stage_combobox['values'] = ['Random'] + self.stage_names
+        self.stage_combobox['values'] = ['Random', 'Blank'] + self.stage_names
 
 
 

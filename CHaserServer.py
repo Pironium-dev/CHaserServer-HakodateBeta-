@@ -2,6 +2,9 @@ import socket
 import subprocess
 import threading
 import time
+import glob
+import random
+import json
 
 from ReadConfig import ReadConfig
 
@@ -19,13 +22,29 @@ def start_game():
 
 class Game:
     def __init__(self) -> None:
-        self.map = [[0 for i in range(15)] for i in range(17)]
+        self.map_path = ''
+        if config['NextStage'] == 'Random':
+            self.map_path = random.choice(glob.glob(config['StagePath'] + r'/*.CHmap'))
+        else:
+            self.map_path = config['StagePath'] + r'/' + config['NextStage'] + '.CHmap'
+        
+        if config['NextStage'] == 'Blank':
+            self.map = [[0 for i in range(15)] for i in range(17)]
+            self.posx = [0, 14]
+            self.posy = [0, 16]
+
+        else:
+            with open(self.map_path, 'r') as f:
+                j = json.load(f)
+                self.map = j['Map']
+                self.posx = [j['Cool'][0], j['Hot'][0]]
+                self.posy = [j['Cool'][1], j['Hot'][1]]
+        
+        self.print_map()
         '''
         Cool: 0
         Hot: 1
         '''
-        self.posx = [0, 10]
-        self.posy = [0, 10]
 
     def cliant_act(self, context: str, identifier: int) -> str:
         x, y = 0, 0
@@ -207,6 +226,7 @@ def Receiver(pnumber, identifier, bot_type):
         server_socket.close()
         tocliant_socket.close()
     except GameRuleError as e:
+        game.print_map()
         print(e)
         exit(0)
 
@@ -217,11 +237,11 @@ class local:
 
 
 if __name__ == '__main__':
+    lock = threading.Lock()
+    
     game = Game()
     is_started = True
     barrier = threading.Barrier(2, action=start_game)
-
-    lock = threading.Lock()
 
     cool_event = threading.Event()
     hot_event = threading.Event()
