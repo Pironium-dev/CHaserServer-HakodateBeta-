@@ -23,6 +23,7 @@ def start_game():
 class Game:
     def __init__(self) -> None:
         self.map_path = ''
+        self.number_of_item = [0, 0]
         if config['NextStage'] == 'Random':
             self.map_path = random.choice(glob.glob(config['StagePath'] + r'/*.CHmap'))
         else:
@@ -32,6 +33,7 @@ class Game:
             self.map = [[0 for i in range(15)] for i in range(17)]
             self.posx = [0, 14]
             self.posy = [0, 16]
+            self.turn = 100
 
         else:
             with open(self.map_path, 'r') as f:
@@ -39,6 +41,7 @@ class Game:
                 self.map = j['Map']
                 self.posx = [j['Cool'][0], j['Hot'][0]]
                 self.posy = [j['Cool'][1], j['Hot'][1]]
+                self.turn = j['Turn']
         
         self.print_map()
         '''
@@ -63,6 +66,14 @@ class Game:
             case 'w':
                 self.posy[identifier] += y
                 self.posx[identifier] += x
+                if not(0 <= self.posy[identifier] <= 16) or not(0 <= self.posx[identifier] <= 14):
+                    raise GameRuleError('マップ外に出ました')
+                if self.map[self.posy[identifier]][self.posx[identifier]] == 2:
+                    raise GameRuleError('ブロックに重なりました')
+                if self.map[self.posy[identifier]][self.posx[identifier]] == 3:
+                    self.number_of_item[identifier] += 1
+                    self.map[self.posy[identifier]][self.posx[identifier]] = 0
+                    self.map[self.posy[identifier] - y][self.posx[identifier]- x] = 2
                 return self.__output_square(self.posx[identifier], self.posy[identifier], is_gr=True)
             case 'p':
                 x *= 2
@@ -191,16 +202,12 @@ def Receiver(pnumber, identifier, bot_type):
                         case 2:
                             if loc.output == 'gr':
                                 tocliant_socket.sendall((s := game.cliant_act('gr', identifier)).encode('utf-8'))
-                                if s[0] == '0':
-                                    raise GameRuleError('ブロックに重なりました')
                                 mode += 1
                             else:
                                 raise GameRuleError('get_readyをしませんでした')
                         case 3:
                             if (c := loc.output) != 'gr':
                                 tocliant_socket.sendall((s := game.cliant_act(c, identifier)).encode('utf-8'))
-                                if s[0] == '0':
-                                    raise GameRuleError('ブロックに重なりました')
                                 game.print_map()
                             else:
                                 raise GameRuleError('get_readyを二回連続でしました')
@@ -212,21 +219,28 @@ def Receiver(pnumber, identifier, bot_type):
                                 else:
                                     cool_event.set()
                                 mode = 1
+                                if identifier == 1:
+                                    game.turn -= 1
+                                    if game.turn == 0:
+                                        raise GameRuleError('ゲームが終わりました')
                             else:
                                 raise GameRuleError('行動を二回連続でしました')
-            case 'Stay':
+            case 'Stay': 
                 barrier.wait()
                 while True:
                     hot_event.clear()
                     hot_event.wait()
                     game.cliant_act('gr', identifier)
                     game.cliant_act('lu', identifier)
+                    if identifier == 1:
+                        game.turn -= 1
+                        if game.turn == 0:
+                            raise GameRuleError('ゲームが終わりました')
                     cool_event.set()
     except OSError:
         server_socket.close()
         tocliant_socket.close()
     except GameRuleError as e:
-        game.print_map()
         print(e)
         exit(0)
 
