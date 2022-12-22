@@ -7,15 +7,14 @@
 
 ## 使い方
 
-GUIChangeConfig.py を起動し、設定変更(下記参照)をしたあと、
+ChangeConfigGUI.py を起動し、設定変更(下記参照)をしたあと、
 Main.py を実行。Cool と Hot のクライアントからの接続を確認したら、エンターでスタート
 
 ## プログラム分け
 
-### Main.py
+### CHaserクライアント.py
 
 ゲーム本体（ロジックもここ）
-クライアントとの通信
 
 ### testCliant.py
 
@@ -27,17 +26,13 @@ Main.py を実行。Cool と Hot のクライアントからの接続を確認�
 
 設定ファイルである Config.dt (中身はtxt) の書き込み＆読み込みを行う
 
-### GUI.py
+### CHaserServerGUI.py
 
-未定
+現在「ゲームのGUI」ブランチで製作中
 
-### ChangeConfig.py
+### ChangeConfigGUI.py
 
 設定ファイルの作成・書き換えを行う
-CLI が起動するので、内容に従って設定ファイルを作成・書き換えをしてほしい
-インデックス入力 → 値の入力で変更
-save でセーブして終了  
-end でセーブせずに終了
 
 ### Hot.bat
 
@@ -46,7 +41,7 @@ Botモードで実行するファイル
 
 ## Config.dt の中身
 
-通常は ChangeConfig.py から作成してほしいが、
+通常は ChangeConfigGUI.py から作成してほしいが、
 json 形式なので、直接書き換えることも可能。
 
 上から順番に（デフォルト値）  
