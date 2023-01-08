@@ -1,6 +1,5 @@
 import socket
-import subprocess
-import threading
+import multiprocessing
 import time
 import glob
 import random
@@ -15,75 +14,45 @@ class GameRuleError(Exception):
 
 config = ReadConfig().output_config()
 
+
 def start_game():
     input('Press Enter')
     print('FIGHT')
 
 
 class Game:
-    def __init__(self) -> None:
+    def __init__(self, lock) -> None:
+        self.lock = lock
         self.map_path = ''
-        self.number_of_item = [0, 0]
-        if config['NextStage'] == 'Random':
-            self.map_path = random.choice(glob.glob(config['StagePath'] + r'/*.CHmap'))
-        else:
-            self.map_path = config['StagePath'] + r'/' + config['NextStage'] + '.CHmap'
+        self.cool_items = 0
+        self.hot_items = 0
         
-        if config['NextStage'] == 'Blank':
-            self.map = [[0 for i in range(15)] for i in range(17)]
-            self.posx = [0, 14]
-            self.posy = [0, 16]
-            self.turn = 100
-
-        else:
-            with open(self.map_path, 'r') as f:
-                j = json.load(f)
-                self.map = j['Map']
-                self.posx = [j['Cool'][0], j['Hot'][0]]
-                self.posy = [j['Cool'][1], j['Hot'][1]]
-                self.turn = j['Turn']
+        self.pipes = []
+        self.receivers = []
         
-        self.print_map()
-        '''
-        Cool: 0
-        Hot: 1
-        '''
-
-    def cliant_act(self, context: str, identifier: int) -> str:
-        x, y = 0, 0
-        match context[1]:
-            case 'u':
-                y -= 1
-            case 'd':
-                y += 1
-            case 'l':
-                x -= 1
-            case 'r':
-                x += 1
-        match context[0]:
-            case 'g':
-                return self.__output_square(self.posx[identifier], self.posy[identifier], is_gr=True)
-            case 'w':
-                self.posy[identifier] += y
-                self.posx[identifier] += x
-                if not(0 <= self.posy[identifier] <= 16) or not(0 <= self.posx[identifier] <= 14):
-                    raise GameRuleError('マップ外に出ました')
-                if self.map[self.posy[identifier]][self.posx[identifier]] == 2:
-                    raise GameRuleError('ブロックに重なりました')
-                if self.map[self.posy[identifier]][self.posx[identifier]] == 3:
-                    self.number_of_item[identifier] += 1
-                    self.map[self.posy[identifier]][self.posx[identifier]] = 0
-                    self.map[self.posy[identifier] - y][self.posx[identifier]- x] = 2
-                return self.__output_square(self.posx[identifier], self.posy[identifier], is_gr=True)
-            case 'p':
-                x *= 2
-                y *= 2
-                self.map[self.posy[identifier] + y][self.posx[identifier] + x] = 2
-                return self.__output_square(self.posx[identifier], self.posy[identifier], is_gr=True)
-            case 's':
-                return self.__output_line(self.posx[identifier], self.posy[identifier], x, y)
-            case _:  # look
-                return self.__output_square(self.posx[identifier] + x * 2, self.posy[identifier] + y * 2)
+        for_cool_pipe, self.cool_pipe = multiprocessing.Pipe()
+        for_hot_pipe, self.hot_pipe = multiprocessing.Pipe()
+        
+        
+        self.cool_receiver = multiprocessing.Process(target=Receiver, args=(for_cool_pipe,), name='Cool')
+        self.hot_receiver = multiprocessing.Process(target=Receiver, args=(for_hot_pipe,), name='Hot')
+        
+        self.cool_receiver.start()
+        self.hot_receiver.start()
+        
+        self.reflection_config()
+        
+        while True:
+            # Hot
+            if self.hot_pipe.poll():
+                match self.hot_pipe.recv():
+                    case 'n':
+                        print(f'Hotに{self.hot_pipe.recv()}が接続しました')
+            # Cool
+            if self.cool_pipe.poll():
+                match self.cool_pipe.recv():
+                    case 'n':
+                        print(f'Coolに{self.cool_pipe.recv()}が接続しました')
 
     def __output_square(self, x, y, is_gr=False) -> str:
         output = ''
@@ -115,7 +84,7 @@ class Game:
             return str(self.map[iy][ix])
 
     def print_map(self):
-        lock.acquire()
+        self.lock.acquire()
         for i, y in enumerate(self.map):
             for j, x in enumerate(y):
                 if self.posx[0] == j and self.posy[0] == i:
@@ -126,144 +95,110 @@ class Game:
                     print(x, end=' ')
             print('')
         print('')
-        time.sleep(config['GameSpeed']/1000)
-        lock.release()
-
-def Receiver(pnumber, identifier, bot_type):
-    """クライアントからの通信を受け取る
-
-    Args:
-        pnumber (int): ポート番号
-        identifier (int): 識別用
-        0がcool, 1がhot
-
-    """
-    global cool_event, hot_event, barrier, is_started
-    loc = local()
-    mode = 0
-    name = ''
+        self.lock.release()
     
-    def receive(lo):
-        s = ''
-        while '\r\n' not in s:
-            s += tocliant_socket.recv(2048).decode('utf-8')
-        lo.output += s[:-2]
-    
-    if bot_type == 'Bot':
-        subprocess.Popen(['start', 'Hot.bat'], shell=True)
-    
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.bind(('', pnumber))
-    tocliant_socket = socket.socket()
+    def reflection_config(self):
+        if config['NextStage'] == 'Random':
+            self.map_path = random.choice(
+                glob.glob(config['StagePath'] + r'/*.CHmap'))
+        else:
+            self.map_path = config['StagePath'] + \
+                r'/' + config['NextStage'] + '.CHmap'
 
-    try:
-        match bot_type:
-            case 'Off' | 'Bot':
-                server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                server_socket.bind(('', pnumber))
-                server_socket.listen()
-                (tocliant_socket, address) = server_socket.accept()
-                while True:
-                    if mode != 1:
-                        loc.output = ''
-                        thread = threading.Thread(target=receive, args=(loc,))
-                        thread.start()
-                        if mode == 0:
-                            thread.join()
-                        else:
-                            thread.join(timeout=config['TimeOut'] / 1000)
-                        if not loc.output:
-                            raise GameRuleError('タイムアウトしました')
-                    '''
-                        mode 0:nameの取得
-                        mode 1:@送信待ち
-                        mode 2:grの取得
-                        mode 3:動作の取得
-                        mode 4:#の取得
-                    '''
-                    match mode:
-                        case 0:
-                            name = loc.output
-                            print(f'{name} から接続されました')
-                            barrier.wait()
-                            mode += 1
-                        case 1:
-                            if identifier == 0:
-                                if is_started:
-                                    is_started = False
-                                else:
-                                    cool_event.clear()
-                                cool_event.wait()
-                            else:
-                                hot_event.clear()
-                                hot_event.wait()
-                            tocliant_socket.sendall(b'@')
-                            mode += 1
-                        case 2:
-                            if loc.output == 'gr':
-                                tocliant_socket.sendall((s := game.cliant_act('gr', identifier)).encode('utf-8'))
-                                mode += 1
-                            else:
-                                raise GameRuleError('get_readyをしませんでした')
-                        case 3:
-                            if (c := loc.output) != 'gr':
-                                tocliant_socket.sendall((s := game.cliant_act(c, identifier)).encode('utf-8'))
-                                game.print_map()
-                            else:
-                                raise GameRuleError('get_readyを二回連続でしました')
-                            mode += 1
-                        case 4:
-                            if loc.output == '#':
-                                if identifier == 0:
-                                    hot_event.set()
-                                else:
-                                    cool_event.set()
-                                mode = 1
-                                if identifier == 1:
-                                    game.turn -= 1
-                                    if game.turn == 0:
-                                        raise GameRuleError('ゲームが終わりました')
-                            else:
-                                raise GameRuleError('行動を二回連続でしました')
-            case 'Stay': 
-                barrier.wait()
-                while True:
-                    hot_event.clear()
-                    hot_event.wait()
-                    game.cliant_act('gr', identifier)
-                    game.cliant_act('lu', identifier)
-                    if identifier == 1:
-                        game.turn -= 1
-                        if game.turn == 0:
-                            raise GameRuleError('ゲームが終わりました')
-                    cool_event.set()
-    except OSError:
-        server_socket.close()
-        tocliant_socket.close()
-    except GameRuleError as e:
-        print(e)
-        exit(0)
+        if config['NextStage'] == 'Blank':
+            self.map = [[0 for i in range(15)] for i in range(17)]
+            self.posx = [0, 14]
+            self.posy = [0, 16]
+            self.turn = 100
+
+        else:
+            with open(self.map_path, 'r') as f:
+                j = json.load(f)
+                self.map = j['Map']
+                self.posx = [j['Cool'][0], j['Hot'][0]]
+                self.posy = [j['Cool'][1], j['Hot'][1]]
+                self.turn = j['Turn']
+        
+        self.cool_pipe.send('c')
+        self.cool_pipe.send(config['CoolPort'])
+        self.cool_pipe.send(config['TimeOut'])
+        self.cool_pipe.send('Off')
+        
+        self.hot_pipe.send('c')
+        self.hot_pipe.send(config['HotPort'])
+        self.hot_pipe.send(config['TimeOut'])
+        self.hot_pipe.send(config['AntiBotMode'])
 
 
-class local:
-    def __init__(self) -> None:
-        self.output = ''
+class Receiver:
+    def __init__(self, pipe) -> None:
+        self.pipe = pipe
+        self.port = 0
+        self.timeout = 0
+        self.mode = 'Off'
+        self.socket = socket.socket()
+        self.to_cliant_socket = socket.socket()
+        self.flag_socket = False # socket が listenかどうか 
+        self.flag_to_cilant_socket = False # to_cliant_socket が つながったかどうか
+        self.flag_received_name = False
+        
+        while True:
+            if self.pipe.poll():
+                match self.pipe.recv():
+                    case 'c': # connect
+                        self.port = pipe.recv()
+                        self.timeout = pipe.recv()
+                        self.mode = pipe.recv()
+                        self.socket = socket.socket()
+                        self.socket.setblocking(False)
+                        self.socket.bind(('', self.port))
+                        self.socket.listen()
+                        self.flag_socket = True
+                    case 'd': # dis-connect
+                        self.flag_socket = False
+                        self.flag_to_cilant_socket = False
+                        self.flag_received_name = False
+                        self.to_cliant_socket.close()
+                    case 's': # start
+                        break
+            
+            if self.flag_socket:
+                try:
+                    self.to_cliant_socket, _ = self.socket.accept()
+                except BlockingIOError:
+                    pass
+                else:
+                    self.flag_socket = False
+                    self.flag_to_cilant_socket = True
+            
+            if self.flag_to_cilant_socket:
+                if not self.flag_received_name:
+                    self.pipe.send('n') # Name
+                    while True:
+                        try:
+                            self.pipe.send(self.to_cliant_socket.recv(4096).decode('utf-8').strip())
+                        except BlockingIOError:
+                            continue
+                        break
+                    self.flag_received_name = True
+                
+        
+        while True:
+            match pipe.recv():
+                case 's': # game set
+                    break
+                case 't': # your turn
+                    pass
+        
+    def socket_receive(self):
+        pass
+
+
+def turn_end():
+    pass
 
 
 if __name__ == '__main__':
-    lock = threading.Lock()
-    
-    game = Game()
-    is_started = True
-    barrier = threading.Barrier(2, action=start_game)
+    lock = multiprocessing.Lock()
 
-    cool_event = threading.Event()
-    hot_event = threading.Event()
-    cool_server = threading.Thread(target=Receiver, args=(config['CoolPort'], 0, 'Off'))
-    hot_server = threading.Thread(target=Receiver, args=(config['HotPort'], 1, config['AntiBotMode']))
-
-    cool_server.start()
-    hot_server.start()
-    cool_event.set()
-    while True:
-        time.sleep(1)
+    game = Game(lock)
