@@ -73,14 +73,15 @@ class Game:
                 break
 
         for i in range(self.turn):
+            print(f'turn: {i + 1}')
             self.cool_items, self.cool_place = self.action(
-                self.cool_items, self.cool_place, self.cool_pipe, 'Cool')
+                self.cool_items, self.cool_place, self.hot_place, self.cool_pipe, 'Cool')
             self.print_map()
             self.hot_items, self.hot_place = self.action(
-                self.hot_items, self.hot_place, self.hot_pipe, 'Hot')
+                self.hot_items, self.hot_place, self.cool_place, self.hot_pipe, 'Hot')
             self.print_map()
         
-        self.game_set('', 0)
+        self.__game_set('', 0)
 
     def __output_square(self, is_gr, x, y) -> str:
         output = ''
@@ -88,11 +89,11 @@ class Game:
         for iy in range(-1, 2):
             for ix in range(-1, 2):
                 if is_gr and ix == 0 and iy == 0:
-                    if self.__in_range(ix + x, iy + y) == '2':
+                    if self.__in_range(ix + x, iy + y) == 2:
                         before_output = '0'
                     output += '0'
                 else:
-                    output += self.__in_range(ix + x, iy + y)
+                    output += str(self.__in_range(ix + x, iy + y))
         return before_output + output
 
     def __output_line(self, x, y, ix, iy):
@@ -100,16 +101,21 @@ class Game:
         for i in range(9):
             x += ix
             y += iy
-            output += self.__in_range(x, y)
+            output += str(self.__in_range(x, y))
         return output
 
-    def __in_range(self, ix, iy):
+    def __in_range(self, ix, iy) -> int:
         if not (0 <= ix <= 14 and 0 <= iy <= 16):
-            return '2'
+            return 2
         elif (ix == self.cool_place[0] and iy == self.cool_place[1]) or (ix == self.hot_place[0] and iy == self.hot_place[1]):
-            return '1'
+            return 1
         else:
-            return str(self.map[iy][ix])
+            return self.map[iy][ix]
+    
+    def __enclosed(self, x, y) -> bool:
+        if self.map[y - 1][x] == self.map[y + 1][x] == self.map[y][x - 1] == self.map[y][x + 1] == 2:
+            return True
+        return False
 
     def print_map(self):
         self.lock.acquire()
@@ -157,40 +163,46 @@ class Game:
         self.hot_pipe.send(config['TimeOut'])
         self.hot_pipe.send(config['AntiBotMode'])
 
-    def cool_disconnect(self):
-        self.cool_pipe.send('d')
-
-    def hot_disconnect(self):
-        self.hot_pipe.send('d')
-
-    def action(self, item, place, pipe, cl):
+    def action(self, item, place: list, enemy_place: list, pipe, cl):
         pipe.send('t')
         pipe.recv()
         pipe.send(self.__output_square(True, *self.cool_place))
+        next_place = place.copy()
         r = pipe.recv()
-        print(r)
         match r[0]:
             case 'w':
+                next_place[0] += Game.direction[r[1]][0]
+                next_place[1] += Game.direction[r[1]][1]
+                pipe.send(self.__output_square(True, *next_place))
+                match self.__in_range(*next_place):
+                    case 2:
+                        self.__game_set(cl, 4)
+                    case 3:
+                        item += 1
+                        self.map[next_place[1]][next_place[0]] = 0
+                        self.map[place[1]][place[0]] = 2
+                        
+            case 'p':
                 place[0] += Game.direction[r[1]][0]
                 place[1] += Game.direction[r[1]][1]
-                pipe.send(self.__output_square(True, *self.cool_place))
-                match self.__in_range(*place):
-                    case '2':
-                        pipe.send('d')
-                        self.game_set(cl, 4)
-                        
-                    case '3':
-                        item += 1
-                        self.map[place[1]][place[0]] = 0
-            case 'p':
-                pass
+                self.cool_place = next_place.copy()
+                self.map[place[1]][place[0]] = 2
+                pipe.send(self.__output_square(True, *next_place))
+                if place == enemy_place:
+                    self.__game_set(cl, 1)
+                elif self.__enclosed(*enemy_place):
+                    self.__game_set(cl, 2)
+                elif self.__enclosed(*next_place):
+                    self.__game_set(cl, 3)
             case 'l':
-                pass
+                pipe.send(self.__output_square(False, place[0] + Game.direction[r[1]][0] * 2, place[1] + Game.direction[r[1]][1] * 2))
             case 's':
-                pass
-        return item, place
+                pipe.send(self.__output_line(place[0], place[1], *Game.direction[r[1]]))
+            case 'C':
+                self.__game_set(cl, 5)
+        return item, next_place
     
-    def game_set(self, cl: str, state:int) -> NoReturn:
+    def __game_set(self, cl: str, state:int) -> NoReturn:
         '''
         state
         0: 通常ゲーム終了
@@ -200,6 +212,7 @@ class Game:
         4: clがブロックと重なった
         5: clが通信エラー
         '''
+        self.print_map()
         match state:
             case 0:
                 print('ゲームが終了しました')
@@ -217,9 +230,7 @@ class Game:
                 print(f'{cl}が通信エラーしました')
         self.cool_pipe.send('d')
         self.hot_pipe.send('d')
-        self.cool_pipe.recv()
-        self.hot_pipe.recv()
-        print('press enter')
+        input('press enter')
         exit()
 
 
@@ -234,6 +245,8 @@ class Receiver:
         self.flag_socket = False  # socket が listenかどうか
         self.flag_to_cilant_socket = False  # to_cliant_socket が つながったかどうか
         self.flag_received_name = False
+        self.flag_bot_name = False
+        self.flag_ended = False
 
         while True:
             if self.pipe.poll():
@@ -251,9 +264,17 @@ class Receiver:
                         self.flag_socket = False
                         self.flag_to_cilant_socket = False
                         self.flag_received_name = False
+                        self.flag_bot_name = False
                         self.to_cliant_socket.close()
                     case 's':  # start
                         break
+            
+            if self.mode == 'Stay':
+                if not self.flag_bot_name:
+                    self.flag_socket = False
+                    pipe.send('n')
+                    pipe.send('Stay Bot')
+                    self.flag_bot_name = True
 
             if self.flag_socket:
                 try:
@@ -276,22 +297,39 @@ class Receiver:
                         break
                     self.flag_received_name = True
 
-        while True:
-            match pipe.recv():
-                case 't':  # your turn
-                    self.to_cliant_socket.send(b'@')
-                    if self.socket_receive() != 'gr':
-                        self.close()
+        if self.mode == 'Stay':
+            while True:
+                if pipe.recv() != 'd':
                     self.pipe.send('ok')
-                    self.to_cliant_socket.send(
-                        self.pipe.recv().encode('utf-8'))
-                    self.pipe.send(self.socket_receive())
-                    self.to_cliant_socket.send(
-                        self.pipe.recv().encode('utf-8'))
-                    if self.socket_receive() != '#':
-                        self.close()
-                case 'd':
-                    self.close()
+                    pipe.recv()
+                    self.pipe.send('lu')
+                    self.pipe.recv()
+                else:
+                    exit()
+        try:
+            while True:
+                    match pipe.recv():
+                        case 't':  # your turn
+                            if self.flag_ended:
+                                self.pipe.send('ok')
+                                self.pipe.recv()
+                                pipe.send('Cl')
+                                exit()
+                            self.to_cliant_socket.send(b'@')
+                            if self.socket_receive() != 'gr':
+                                self.close()
+                            self.pipe.send('ok')
+                            self.to_cliant_socket.send(
+                                self.pipe.recv().encode('utf-8'))
+                            self.pipe.send(self.socket_receive())
+                            self.to_cliant_socket.send(
+                                self.pipe.recv().encode('utf-8'))
+                            if self.socket_receive() != '#':
+                                self.close()
+                        case 'd':
+                            self.close()
+        except EOFError:  # ゲーム終了時
+            pass
 
     def socket_receive(self):
         start = time.time()
@@ -308,13 +346,11 @@ class Receiver:
                 continue
             return r
 
-    def close(self) -> NoReturn:
-        self.pipe.send('cl')  # closed
+    def close(self):
+        self.flag_ended = True
         self.to_cliant_socket.close()
-        exit()
 
 
 if __name__ == '__main__':
     lock = multiprocessing.Lock()
-
     game = Game(lock)
