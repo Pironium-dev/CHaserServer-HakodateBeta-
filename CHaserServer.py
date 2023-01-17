@@ -80,6 +80,7 @@ class Game:
             self.hot_items, self.hot_place = self.action(
                 self.hot_items, self.hot_place, self.cool_place, self.hot_pipe, 'Hot')
             self.print_map()
+            time.sleep(config["GameSpeed"] / 1000)
         
         self.__game_set('', 0)
 
