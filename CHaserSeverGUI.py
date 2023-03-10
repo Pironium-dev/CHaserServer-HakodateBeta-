@@ -1,11 +1,11 @@
 import tkinter as tk
 import tkinter.ttk as ttk
 import tkinter.font as tk_f
+from PIL import ImageTk
 
-import socket, os, random, multiprocessing, time, glob, json
+import socket, os, random, multiprocessing, time, glob, json, pprint
 
-from typing import Generator, NoReturn
-
+from typing import Generator
 
 from ReadConfig import ReadConfig
 from CHaserServer import Game
@@ -26,7 +26,6 @@ class Game_Window(tk.Frame):
 
         self.big_flame_menu.grid(row=0, column=0, sticky=tk.NSEW)
 
-        self.big_flame_menu.tkraise()
         
         self.cool_state = 0
         self.hot_state = 0
@@ -38,7 +37,7 @@ class Game_Window(tk.Frame):
         
         self.has_game_started = False
         self.__after()
-        
+        self.big_flame_menu.tkraise()
 
     def __game_screen(self):
         # frame
@@ -46,13 +45,24 @@ class Game_Window(tk.Frame):
         self.game_frame_cool = ttk.Labelframe(self.big_flame_game, text='Cool')
         self.game_frame_hot = ttk.Labelframe(self.big_flame_game, text='Hot')
 
+        # picture
+        self.wall_image = ImageTk.PhotoImage(file='./画像/wall.png')
+        self.item_image = ImageTk.PhotoImage(file='./画像/item.png')
+        self.hot_image = ImageTk.PhotoImage(file='./画像/Hot.png')
+        self.cool_image = ImageTk.PhotoImage(file='./画像/Cool.png')
+        
         # canvas
+        
         self.game_canvas = tk.Canvas(
-            self.big_flame_game, width=380, height=430, bg='white')
-        self.canvas_frame = [self.game_canvas.create_line(0, 2, 380, 2),
-                             self.game_canvas.create_line(0, 430, 380, 430),
-                             self.game_canvas.create_line(380, 2, 380, 430),
-                             self.game_canvas.create_line(2, 2, 2, 430)]
+            self.big_flame_game, width=378, height=428, bg='white', borderwidth=0)
+        self.game_canvas.create_line(0, 2, 378, 2)
+        self.game_canvas.create_line(0, 428, 379, 428)
+        self.game_canvas.create_line(378, 2, 378, 428)
+        self.game_canvas.create_line(2, 2, 2, 428)
+        for i in range(1, 17):
+            self.game_canvas.create_line(0, 2 + i * 25, 378, 2 + i * 25, dash=(1, 1))
+        for i in range(1, 15):
+            self.game_canvas.create_line(2 + i * 25, 0, 2 + i * 25, 428, dash=(1, 1))
 
         # separator
         ttk.Style().configure('black.TSeparator', background='black')
@@ -140,6 +150,7 @@ class Game_Window(tk.Frame):
         self.menu_frame_cool, self.menu_label_ver_cool, self.menu_port_ver_cool, self.menu_mode_ver_cool, self.menu_button_cool, self.menu_cool_spinbox,  self.menu_cool_combobox = self.__cliants_menu(
             'COOL')
         self.menu_button_cool['command'] = self.__cool_wait
+        self.menu_cool_combobox.bind('<<ComboboxSelected>>', self.__cool_stay)
         self.menu_port_ver_cool.set(config.d['CoolPort'])
         self.menu_mode_ver_cool.set(config.d['CoolMode'])
         
@@ -148,6 +159,7 @@ class Game_Window(tk.Frame):
         self.menu_frame_hot, self.menu_label_ver_hot, self.menu_port_ver_hot, self.menu_mode_ver_hot, self.menu_button_hot, self.menu_hot_spinbox,  self.menu_hot_combobox = self.__cliants_menu(
             'HOT')
         self.menu_button_hot['command'] = self.__hot_wait
+        self.menu_hot_combobox.bind('<<ComboboxSelected>>', self.__hot_stay)
         self.menu_port_ver_hot.set(config.d['HotPort'])
         self.menu_mode_ver_hot.set(config.d['HotMode'])
 
@@ -244,8 +256,7 @@ class Game_Window(tk.Frame):
         spinbox['from'] = 1024
         spinbox['to'] = 5000
         combobox_ver = tk.StringVar()
-        combobox = ttk.Combobox(frame, values=[
-                                'User', 'Stay', 'Bot'], state='readonly', textvariable=combobox_ver, width=6)
+        combobox = ttk.Combobox(frame, state='readonly', textvariable=combobox_ver, values=['User', 'Stay', 'Bot'], width=6)
         button = ttk.Button(frame, text='待機開始')
         label.grid(row=0, column=0, sticky=tk.W, columnspan=2)
         spinbox.grid(row=1, column=0)
@@ -262,6 +273,14 @@ class Game_Window(tk.Frame):
         config.d['CoolPort'] = self.menu_port_ver_cool
         config.d['HotPort'] = self.menu_port_ver_hot
     
+    def __cool_stay(self, _=None):
+        if self.menu_mode_ver_cool.get() == 'Stay' and self.cool_state == 0:
+            self.__cool_wait()
+
+    def __hot_stay(self, _=None):
+        if self.menu_mode_ver_hot.get() == 'Stay' and self.hot_state == 0:
+            self.__hot_wait()
+    
     def __cool_wait(self):
         self.pipe.send('C')
         if self.cool_state == 0:
@@ -276,7 +295,7 @@ class Game_Window(tk.Frame):
             self.pipe.send('disconnect')
             self.cool_state = 0
             self.menu_button_cool['text'] = '待機開始'
-            self.menu_cool_combobox['state'] = 'normal'
+            self.menu_cool_combobox['state'] = 'readonly'
             self.menu_cool_spinbox['state'] = 'normal'
 
     def __hot_wait(self):
@@ -293,13 +312,14 @@ class Game_Window(tk.Frame):
             self.pipe.send('disconnect')
             self.hot_state = 0
             self.menu_button_hot['text'] = '待機開始'
-            self.menu_hot_combobox['state'] = 'normal'
+            self.menu_hot_combobox['state'] = 'readonly'
             self.menu_hot_spinbox['state'] = 'normal'
     
     def __start_game(self):
         if self.cool_state == self.hot_state == 2:
-            self.has_game_started = True
+            self.__write_map()
             self.big_flame_game.tkraise()
+            self.has_game_started = True
             
             self.pipe.send('start')
             self.pipe.send(self.menu_map_ver.get())
@@ -336,9 +356,50 @@ class Game_Window(tk.Frame):
     
     def __game_tick(self):
         self.pipe.send('ok')
-        self.pipe.recv()
-        root.after(self.menu_settings_speed_ver.get(), self.__game_tick)
+        cl = self.pipe.recv()
+        nowpos = self.pipe.recv()
+        match self.pipe.recv():
+            case 'w':
+                i, j = self.pipe.recv()
+                print(i, j)
+                self.game_canvas.moveto(cl, i * 25 + 3, j * 25 + 3)
+                if self.pipe.recv() == 'i':
+                    self.game_canvas.create_image(15 + nowpos[0] * 25, 15 + nowpos[1] * 25, image=self.wall_image)
+                    self.game_canvas.delete(self.game_screen_id[j][i])
+        if self.pipe.recv() != 'gameset':
+            root.after(self.menu_settings_speed_ver.get(), self.__game_tick)
 
+    def __write_map(self):
+        game_map = []
+        hot = []
+        cool = []
+        
+        self.game_screen_id = [[-1 for i in range(15)] for i in range(17)]
+        
+        try:
+            with open(config.d['StagePath'] + r'/' + self.menu_map_ver.get() + '.CHmap', 'r') as f:
+                j = json.load(f)
+                game_map = j['Map']
+                hot = j['Hot']
+                cool = j['Cool']
+        except FileNotFoundError:
+            if self.menu_map_ver.get() == 'Blank':
+                game_map = [[0 for i in range(15)] for i in range(17)]
+                hot = [8, 9]
+                cool = [6, 7]
+            else:
+                raise FileNotFoundError
+        for i, x in enumerate(game_map):
+            for j, y in enumerate(x):
+                if hot == [j, i]:
+                    self.game_canvas.create_image(15 + j * 25, 15 + i * 25, image=self.hot_image, tag='Hot')
+                if cool == [j, i]:
+                    self.game_canvas.create_image(15 + j * 25, 15 + i * 25, image=self.cool_image, tag='Cool')
+                match y:
+                    case 2:
+                        self.game_canvas.create_image(15 + j * 25, 15 + i * 25, image=self.wall_image)
+                    case 3:
+                        self.game_screen_id[i][j] = self.game_canvas.create_image(15 + j * 25, 15 + i * 25, image=self.item_image)
 
 def listup_maps() -> Generator[str, None, None]:
     for i in os.listdir(config.d['StagePath']):

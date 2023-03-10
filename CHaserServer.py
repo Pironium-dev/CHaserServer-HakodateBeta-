@@ -8,6 +8,7 @@ from typing import NoReturn
 
 from ReadConfig import ReadConfig
 
+# 壁:2 クライアント:1 アイテム:3 
 class Game:
     direction: dict[str, tuple[int, int]] = {
         'r': (1, 0), 'l': (-1, 0), 'd': (0, 1), 'u': (0, -1)}
@@ -109,12 +110,10 @@ class Game:
             print(f'turn: {i + 1}')
             self.cool_items, self.cool_place = self.action(
                 self.cool_items, self.cool_place, self.hot_place, self.cool_pipe, 'Cool')
-            self.print_map()
             self.window_pipe.send('ok')
             self.window_pipe.recv()
             self.hot_items, self.hot_place = self.action(
                 self.hot_items, self.hot_place, self.cool_place, self.hot_pipe, 'Hot')
-            self.print_map()
             self.window_pipe.send('ok')
             self.window_pipe.recv()
 
@@ -174,11 +173,10 @@ class Game:
         self.lock.release()
 
     def change_map(self):
-
         if self.map_name == 'Blank':
             self.map = [[0 for i in range(15)] for i in range(17)]
-            self.hot_place = [14, 16]
-            self.cool_place = [0, 0]
+            self.hot_place = [8, 9]
+            self.cool_place = [6, 7]
             self.turn = 100
         else:
             with open(self.map_directory + r'/' + self.map_name + '.CHmap', 'r') as f:
@@ -196,6 +194,14 @@ class Game:
         pipe.send(self.output_square(True, *self.cool_place))
         next_place = place.copy()
         r = pipe.recv()
+        
+        # window送信 変数類
+        self.window_pipe.send(cl)
+        self.window_pipe.send(place)
+        self.window_pipe.send(r[0])
+        
+        is_getted_item = False
+        
         match r[0]:
             case 'w':
                 next_place[0] += Game.direction[r[1]][0]
@@ -205,9 +211,15 @@ class Game:
                     case 2:
                         self.game_set(cl, 4)
                     case 3:
+                        is_getted_item = True
                         item += 1
                         self.map[next_place[1]][next_place[0]] = 0
                         self.map[place[1]][place[0]] = 2
+                self.window_pipe.send(next_place)
+                if is_getted_item:
+                    self.window_pipe.send('i')
+                else:
+                    self.window_pipe.send('n')
 
             case 'p':
                 place[0] += Game.direction[r[1]][0]
@@ -258,6 +270,7 @@ class Game:
                 print(f'{cl}がブロックと重なりました')
             case 5:
                 print(f'{cl}が通信エラーしました')
+        self.window_pipe.send('gameset')
         self.cool_disconnect()
         self.hot_disconnect()
         exit()
@@ -350,7 +363,7 @@ class Receiver:
                 if pipe.recv() != 'd':
                     self.pipe.send('ok')
                     pipe.recv()
-                    self.pipe.send('lu')
+                    self.pipe.send('su')
                     self.pipe.recv()
                 else:
                     exit()
