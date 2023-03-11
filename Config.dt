@@ -6,7 +6,7 @@
     "HotMode": "User",
     "CoolMode": "User",
     "LogPath": "",
-    "StagePath": "C:/Users/pirog/OneDrive/\u30c7\u30b9\u30af\u30c8\u30c3\u30d7/\u30c1\u30a7\u30a4\u30b5\u30fc\u306e\u30b5\u30fc\u30d0\u30fc/ChaserServer-tentative-/\u30de\u30c3\u30d7\u4f8b",
+    "StagePath": ".\\maps\\",
     "NextMap": "Blank",
     "Score": false,
     "Log": false
