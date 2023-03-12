@@ -107,7 +107,6 @@ class Game:
 
         self.window_pipe.recv()
         for i in range(self.turn):
-            print(f'turn: {i + 1}')
             self.cool_items, self.cool_place = self.action(
                 self.cool_items, self.cool_place, self.hot_place, self.cool_pipe, 'Cool')
             self.window_pipe.send('ok')

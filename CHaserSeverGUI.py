@@ -75,14 +75,16 @@ class Game_Window(tk.Frame):
         # status
         self.var_turn = tk.StringVar()
         self.var_winner = tk.StringVar()
+        self.var_prog_turn = tk.IntVar()
 
+        self.var_prog_turn.set(0)
         self.var_turn.set('Turn:100')
         self.var_winner.set('Draw')
 
         self.label_turn = ttk.Label(
             self.game_frame_status, textvariable=self.var_turn, font=self.font_normal)
         self.progressbar = ttk.Progressbar(
-            self.game_frame_status, maximum=100, length=220)
+            self.game_frame_status, maximum=100, length=220, variable=self.var_prog_turn)
         self.label_winner = ttk.Label(
             self.game_frame_status, textvariable=self.var_winner, font=(('MSゴシック', '30')))
 
@@ -321,6 +323,7 @@ class Game_Window(tk.Frame):
             self.big_flame_game.tkraise()
             self.has_game_started = True
             
+            
             self.pipe.send('start')
             self.pipe.send(self.menu_map_ver.get())
             self.pipe.send(self.menu_settings_timeout_ver.get())
@@ -357,17 +360,25 @@ class Game_Window(tk.Frame):
     def __game_tick(self):
         self.pipe.send('ok')
         cl = self.pipe.recv()
-        nowpos = self.pipe.recv()
-        match self.pipe.recv():
-            case 'w':
-                i, j = self.pipe.recv()
-                print(i, j)
-                self.game_canvas.moveto(cl, i * 25 + 3, j * 25 + 3)
-                if self.pipe.recv() == 'i':
-                    self.game_canvas.create_image(15 + nowpos[0] * 25, 15 + nowpos[1] * 25, image=self.wall_image)
-                    self.game_canvas.delete(self.game_screen_id[j][i])
-        if self.pipe.recv() != 'gameset':
-            root.after(self.menu_settings_speed_ver.get(), self.__game_tick)
+        if cl != 'gameset':
+            nowpos = self.pipe.recv()
+            match self.pipe.recv():
+                case 'w':
+                    i, j = self.pipe.recv()
+                    print(i, j)
+                    self.game_canvas.moveto(cl, i * 25 + 3, j * 25 + 3)
+                    if self.pipe.recv() == 'i':
+                        self.game_canvas.create_image(15 + nowpos[0] * 25, 15 + nowpos[1] * 25, image=self.wall_image)
+                        self.game_canvas.delete(self.game_screen_id[j][i])
+            if cl == 'Hot':
+                self.var_prog_turn.set(self.var_prog_turn.get() + 1)
+                self.var_turn.set(f'Turn:{self.whole_turn - self.var_prog_turn.get()}')
+            
+            if self.pipe.recv() != 'gameset':
+                root.after(self.menu_settings_speed_ver.get(), self.__game_tick)
+            else:
+                print('received')
+            
 
     def __write_map(self):
         game_map = []
@@ -382,11 +393,13 @@ class Game_Window(tk.Frame):
                 game_map = j['Map']
                 hot = j['Hot']
                 cool = j['Cool']
+                self.whole_turn = j['Turn']
         except FileNotFoundError:
             if self.menu_map_ver.get() == 'Blank':
                 game_map = [[0 for i in range(15)] for i in range(17)]
                 hot = [8, 9]
                 cool = [6, 7]
+                self.whole_turn = 100
             else:
                 raise FileNotFoundError
         for i, x in enumerate(game_map):
