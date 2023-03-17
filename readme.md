@@ -7,6 +7,11 @@
 
 ## 使い方
 
+事前に Pillow(PIL) をインストールしておいてください。
+```
+pip install Pillow
+```
+
 ChangeConfigGUI.py を起動し、設定変更(下記参照)をしたあと、
 Main.py を実行。Cool と Hot のクライアントからの接続を確認したら、エンターでスタート
 
