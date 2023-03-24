@@ -3,19 +3,37 @@ import tkinter.ttk as ttk
 import tkinter.font as tk_f
 from PIL import ImageTk
 
-import socket, os, random, multiprocessing, time, glob, json, pprint
+import socket, os, random, multiprocessing, json, threading
 
 from typing import Generator
 
 from ReadConfig import ReadConfig
 from CHaserServer import Game
 
+'''
+Bot
+スコア表示
+ログ保存
+ファイル場所
+マップ場所
+メニューのマップ表示
+設定保存
+マップ制作
+'''
+
 
 class Game_Window(tk.Frame):
     def __init__(self, master: tk.Tk, pipe):
         self.pipe = pipe
+        self.condition = threading.Condition()
+        
         tk.Frame.__init__(self, master=master)
         master.title('MainWindow')
+        master.protocol('WM_DELETE_WINDOW', )
+        
+        self.points = {'Cool': 0, 'Hot':0}
+        self.labels = {} # ゲームのポイントのラベルをまとめたもの
+        
 
         # big_flame
         self.big_flame_menu = ttk.Frame()
@@ -36,8 +54,14 @@ class Game_Window(tk.Frame):
         '''
         
         self.has_game_started = False
-        self.__after()
+        # self.__after()
+        self.receive = threading.Thread(target=self.__pipe_receive)
+        self.receive.daemon = True
+        self.receive.start()
         self.big_flame_menu.tkraise()
+
+    def shutdown(self):
+        self.pipe.send('shutdown')
 
     def __game_screen(self):
         # frame
@@ -79,7 +103,7 @@ class Game_Window(tk.Frame):
 
         self.var_prog_turn.set(0)
         self.var_turn.set('Turn:100')
-        self.var_winner.set('Draw')
+        self.var_winner.set('')
 
         self.label_turn = ttk.Label(
             self.game_frame_status, textvariable=self.var_turn, font=self.font_normal)
@@ -94,25 +118,26 @@ class Game_Window(tk.Frame):
 
         # Cool
 
-        self.var_cool_score = tk.StringVar()
-        self.var_cool_score.set('Score:0(Item:0)')
+        self.labels['Cool'] = tk.StringVar()
+        self.labels['Cool'].set('Score:0(Item:0)')
 
         self.label_cool_name = ttk.Label(
             self.game_frame_cool, text='自動君', font=self.font_normal)
         self.label_cool_score = ttk.Label(
-            self.game_frame_cool, textvariable=self.var_cool_score, font=self.font_normal)
+            self.game_frame_cool, textvariable=self.labels['Cool'], font=self.font_normal)
 
         self.label_cool_name.pack()
         self.label_cool_score.pack()
 
         # Hot
-        self.var_hot_score = tk.StringVar()
-        self.var_hot_score.set('Score:0(Item:0)')
+
+        self.labels['Hot'] = tk.StringVar()
+        self.labels['Hot'].set('Score:0(Item:0)')
 
         self.label_hot_name = ttk.Label(
             self.game_frame_hot, text='自動君', font=self.font_normal)
         self.label_hot_score = ttk.Label(
-            self.game_frame_hot, textvariable=self.var_cool_score, font=self.font_normal)
+            self.game_frame_hot, textvariable=self.labels['Hot'], font=self.font_normal)
 
         self.label_hot_name.pack()
         self.label_hot_score.pack()
@@ -133,9 +158,6 @@ class Game_Window(tk.Frame):
         self.big_flame_menu.columnconfigure(1, weight=1)
 
         # ver
-        self.menu_settings_ver_score = tk.BooleanVar()
-        self.menu_settings_ver_score.set(config.d['Score'])
-
         self.menu_settings_ver_log = tk.BooleanVar()
         self.menu_settings_ver_log.set(config.d['Log'])
 
@@ -200,8 +222,6 @@ class Game_Window(tk.Frame):
         self.menu_frame_settings = ttk.Labelframe(
             self.big_flame_menu, text='設定')
 
-        self.menu_settings_box_score = ttk.Checkbutton(
-            self.menu_frame_settings, text='スコアモード', variable=self.menu_settings_ver_score)
         self.menu_settings_box_log = ttk.Checkbutton(
             self.menu_frame_settings, text='ログ保存', variable=self.menu_settings_ver_log)
 
@@ -228,8 +248,7 @@ class Game_Window(tk.Frame):
             self.menu_frame_settings, text='マップ保存場所')
         self.menu_settings_button_map.grid(row=3, column=1)
 
-        self.menu_settings_box_score.grid(row=0, column=0)
-        self.menu_settings_box_log.grid(row=0, column=1)
+        self.menu_settings_box_log.grid(row=0, column=0, columnspan=2)
         self.menu_settings_label_timeout.grid(row=1, column=0)
         self.menu_settings_spinbox_timeout.grid(row=2, column=0)
         self.menu_settings_label_speed.grid(row=1, column=1)
@@ -248,7 +267,7 @@ class Game_Window(tk.Frame):
         self.menu_frame_settings.grid(row=1, column=1)
 
     def __cliants_menu(self, name):
-        label_ver = tk.StringVar(value='名前\nIP')
+        label_ver = tk.StringVar(value='名前:\nIP:')
         frame = ttk.Labelframe(self.big_flame_menu, text=name)
         frame.columnconfigure(2, weight=1)
         label = ttk.Label(frame, textvariable=label_ver,
@@ -299,6 +318,8 @@ class Game_Window(tk.Frame):
             self.menu_button_cool['text'] = '待機開始'
             self.menu_cool_combobox['state'] = 'readonly'
             self.menu_cool_spinbox['state'] = 'normal'
+            self.menu_label_ver_cool.set('名前:\nIP:')
+            
 
     def __hot_wait(self):
         self.pipe.send('H')
@@ -316,6 +337,8 @@ class Game_Window(tk.Frame):
             self.menu_button_hot['text'] = '待機開始'
             self.menu_hot_combobox['state'] = 'readonly'
             self.menu_hot_spinbox['state'] = 'normal'
+            self.menu_label_ver_hot.set('名前:\nIP:')
+            
     
     def __start_game(self):
         if self.cool_state == self.hot_state == 2:
@@ -323,62 +346,112 @@ class Game_Window(tk.Frame):
             self.big_flame_game.tkraise()
             self.has_game_started = True
             
-            
             self.pipe.send('start')
             self.pipe.send(self.menu_map_ver.get())
-            self.pipe.send(self.menu_settings_timeout_ver.get())
-            
-            self.__game_tick()
+            self.pipe.send(int(self.menu_settings_timeout_ver.get()))
+            self.pipe.send(int(self.menu_settings_speed_ver.get()))
     
-    def __after(self):
-        if not self.has_game_started:
-            if self.pipe.poll():
-                if self.pipe.recv() == 'H': # Hot
-                    match self.pipe.recv():
-                        case 'name':
-                            print(self.pipe.recv(), 'が接続しました')
-                            self.hot_state = 2
-                            self.menu_button_hot['text'] = '切断'
-                        case 'disconnect':
-                            self.hot_state = 0
-                            self.menu_button_hot['text'] = '待機開始'
-                else: # Cool
-                    match self.pipe.recv():
-                        case 'name':
-                            print(self.pipe.recv(), 'が接続しました')
-                            self.cool_state = 2
-                            self.menu_button_cool['text'] = '切断'
-                        case 'disconnect':
-                            self.hot_state = 0
-                            self.menu_button_cool['text'] = '待機開始'
+    def __pipe_receive(self):
+        while True:
             if self.cool_state == self.hot_state == 2:
                 self.menu_game_start['state'] = 'normal'
             else:
                 self.menu_game_start['state'] = 'disable'
-            root.after(100, self.__after)
-    
-    def __game_tick(self):
-        self.pipe.send('ok')
-        cl = self.pipe.recv()
-        if cl != 'gameset':
-            nowpos = self.pipe.recv()
-            match self.pipe.recv():
-                case 'w':
-                    i, j = self.pipe.recv()
-                    print(i, j)
-                    self.game_canvas.moveto(cl, i * 25 + 3, j * 25 + 3)
-                    if self.pipe.recv() == 'i':
-                        self.game_canvas.create_image(15 + nowpos[0] * 25, 15 + nowpos[1] * 25, image=self.wall_image)
-                        self.game_canvas.delete(self.game_screen_id[j][i])
-            if cl == 'Hot':
-                self.var_prog_turn.set(self.var_prog_turn.get() + 1)
-                self.var_turn.set(f'Turn:{self.whole_turn - self.var_prog_turn.get()}')
-            
-            if self.pipe.recv() != 'gameset':
-                root.after(self.menu_settings_speed_ver.get(), self.__game_tick)
-            else:
-                print('received')
-            
+
+            with self.condition:
+                match self.pipe.recv():
+                    case 'Cool':
+                        if self.pipe.recv() == 'connect':
+                            self.cool_state = 2
+                            self.menu_button_cool['text'] = '切断'
+                            self.menu_label_ver_cool.set(f'名前:{self.pipe.recv()}\nIP:{self.pipe.recv()}')
+                        else:
+                            self.cool_state = 0
+                            self.menu_button_cool['text'] = '待機開始'
+                            self.menu_cool_combobox['state'] = 'readonly'
+                            self.menu_cool_spinbox['state'] = 'normal'
+                            self.menu_label_ver_cool.set('名前:\nIP:')
+                    case 'Hot':
+                        if self.pipe.recv() == 'connect':
+                            self.hot_state = 2
+                            self.menu_button_hot['text'] = '切断'
+                            self.menu_label_ver_hot.set(f'名前:{self.pipe.recv()}\nIP:{self.pipe.recv()}')
+                        else:
+                            self.hot_state = 0
+                            self.menu_button_hot['text'] = '待機開始'
+                            self.menu_hot_combobox['state'] = 'readonly'
+                            self.menu_hot_spinbox['state'] = 'normal'
+                            self.menu_label_ver_hot.set('名前:\nIP:')
+                    case 'Game':
+                        # アニメーション入れる                        
+                        cl = self.pipe.recv()
+                        if cl != 'gameset':
+                            nowpos = self.pipe.recv()
+                            match self.pipe.recv():
+                                case 'w':
+                                    i, j = self.pipe.recv()
+                                    self.game_canvas.moveto(cl, i * 25 + 3, j * 25 + 3)
+                                    if self.pipe.recv() == 'i':
+                                        self.game_canvas.create_image(15 + nowpos[0] * 25, 15 + nowpos[1] * 25, image=self.wall_image)
+                                        self.game_canvas.delete(self.game_screen_id[j][i])
+                                        self.points[cl] += 1
+                                case 'p':
+                                    i, j = self.pipe.recv()
+                                    self.game_canvas.create_image(15 + i * 25, 15 + j * 25, image=self.wall_image)
+                            self.labels[cl].set(f'Score:{self.points[cl] * 3 + (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
+                            if cl == 'Hot':
+                                self.var_prog_turn.set(self.var_prog_turn.get() + 1)
+                                self.var_turn.set(f'Turn:{self.whole_turn - self.var_prog_turn.get()}')
+                        
+                    case 'Gameset':
+                        cl = self.pipe.recv()
+                        print(cl)
+                        self.var_turn.set(f'Turn:{self.whole_turn - self.var_prog_turn.get()}')
+                        self.var_prog_turn.set(self.var_prog_turn.get() - 1)
+                        print(self.whole_turn - self.var_prog_turn.get())
+                        match self.pipe.recv(): # ChaserServer.py game_setを参照してください
+                            case 0:
+                                if self.points['Cool'] == self.points['Hot']:
+                                    self.var_winner.set('DRAW')
+                                elif self.points['Cool'] > self.points['Hot']:
+                                    self.var_winner.set('Cool WIN')
+                                else:
+                                    self.var_winner.set('Hot WIN')
+                            case 1:
+                                self.var_winner.set(f'{cl} WIN')
+                                self.labels[cl].set(f'Score:{self.points[cl] * 3 + (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
+                                cl = self.inverse_client(cl)
+                                self.labels[cl].set(f'Score:{self.points[cl] * 3 - (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
+                            case 2:
+                                self.var_winner.set(f'{cl} WIN')
+                                self.labels[cl].set(f'Score:{self.points[cl] * 3 + (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
+                                cl = self.inverse_client(cl)
+                                self.labels[cl].set(f'Score:{self.points[cl] * 3 - (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
+                            case 3:
+                                self.var_winner.set(f'{cl} LOSE')
+                                self.labels[cl].set(f'Score:{self.points[cl] * 3 - (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
+                                cl = self.inverse_client(cl)
+                                self.labels[cl].set(f'Score:{self.points[cl] * 3 + (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
+                            case 4:
+                                self.var_winner.set(f'{cl} LOSE')
+                                self.labels[cl].set(f'Score:{self.points[cl] * 3 - (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
+                                cl = self.inverse_client(cl)
+                                self.labels[cl].set(f'Score:{self.points[cl] * 3 + (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
+                            case 5:
+                                self.var_winner.set(f'{cl} LOSE')
+                                self.labels[cl].set(f'Score:{self.points[cl] * 3 - (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
+                                cl = self.inverse_client(cl)
+                                self.labels[cl].set(f'Score:{self.points[cl] * 3 + (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
+        
+    def inverse_client(self, cl) -> str:
+        '''
+        cl と 反対のクライアントを返す
+        '''
+        if cl == 'Hot':
+            return 'Cool'
+        else:
+            return 'Hot'
+
 
     def __write_map(self):
         game_map = []
