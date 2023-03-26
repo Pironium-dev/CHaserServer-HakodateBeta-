@@ -1,9 +1,15 @@
 import tkinter as tk
 import tkinter.ttk as ttk
 import tkinter.font as tk_f
+from tkinter import filedialog
 from PIL import ImageTk
 
-import socket, os, random, multiprocessing, json, threading
+import socket
+import os
+import random
+import multiprocessing
+import json
+import threading
 
 from typing import Generator
 
@@ -12,28 +18,31 @@ from CHaserServer import Game
 
 '''
 Bot
-スコア表示
 ログ保存
-ファイル場所
-マップ場所
+
 メニューのマップ表示
 設定保存
 マップ制作
 '''
 
+'''
+通信書き換え
+スコア表示
+ファイル場所
+マップ場所
+'''
 
 class Game_Window(tk.Frame):
     def __init__(self, master: tk.Tk, pipe):
         self.pipe = pipe
         self.condition = threading.Condition()
-        
+
         tk.Frame.__init__(self, master=master)
         master.title('MainWindow')
         master.protocol('WM_DELETE_WINDOW', )
-        
-        self.points = {'Cool': 0, 'Hot':0}
-        self.labels = {} # ゲームのポイントのラベルをまとめたもの
-        
+
+        self.points = {'Cool': 0, 'Hot': 0}
+        self.labels = {}  # ゲームのポイントのラベルをまとめたもの
 
         # big_flame
         self.big_flame_menu = ttk.Frame()
@@ -44,7 +53,6 @@ class Game_Window(tk.Frame):
 
         self.big_flame_menu.grid(row=0, column=0, sticky=tk.NSEW)
 
-        
         self.cool_state = 0
         self.hot_state = 0
         '''
@@ -52,7 +60,7 @@ class Game_Window(tk.Frame):
         1: 待機中
         2: 接続中
         '''
-        
+
         self.has_game_started = False
         # self.__after()
         self.receive = threading.Thread(target=self.__pipe_receive)
@@ -74,9 +82,9 @@ class Game_Window(tk.Frame):
         self.item_image = ImageTk.PhotoImage(file='./画像/item.png')
         self.hot_image = ImageTk.PhotoImage(file='./画像/Hot.png')
         self.cool_image = ImageTk.PhotoImage(file='./画像/Cool.png')
-        
+
         # canvas
-        
+
         self.game_canvas = tk.Canvas(
             self.big_flame_game, width=378, height=428, bg='white', borderwidth=0)
         self.game_canvas.create_line(0, 2, 378, 2)
@@ -84,9 +92,11 @@ class Game_Window(tk.Frame):
         self.game_canvas.create_line(378, 2, 378, 428)
         self.game_canvas.create_line(2, 2, 2, 428)
         for i in range(1, 17):
-            self.game_canvas.create_line(0, 2 + i * 25, 378, 2 + i * 25, dash=(1, 1))
+            self.game_canvas.create_line(
+                0, 2 + i * 25, 378, 2 + i * 25, dash=(1, 1))
         for i in range(1, 15):
-            self.game_canvas.create_line(2 + i * 25, 0, 2 + i * 25, 428, dash=(1, 1))
+            self.game_canvas.create_line(
+                2 + i * 25, 0, 2 + i * 25, 428, dash=(1, 1))
 
         # separator
         ttk.Style().configure('black.TSeparator', background='black')
@@ -177,7 +187,6 @@ class Game_Window(tk.Frame):
         self.menu_cool_combobox.bind('<<ComboboxSelected>>', self.__cool_stay)
         self.menu_port_ver_cool.set(config.d['CoolPort'])
         self.menu_mode_ver_cool.set(config.d['CoolMode'])
-        
 
         # Hot
         self.menu_frame_hot, self.menu_label_ver_hot, self.menu_port_ver_hot, self.menu_mode_ver_hot, self.menu_button_hot, self.menu_hot_spinbox,  self.menu_hot_combobox = self.__cliants_menu(
@@ -198,7 +207,7 @@ class Game_Window(tk.Frame):
         self.menu_frame_map_select = ttk.Frame(self.big_flame_menu)
 
         self.menu_combobox = ttk.Combobox(
-            self.menu_frame_map_select, textvariable=self.menu_map_ver, state='readonly', values=list(listup_maps()))
+            self.menu_frame_map_select, textvariable=self.menu_map_ver, state='readonly')
         self.menu_map_randomize = ttk.Button(
             self.menu_frame_map_select, text='ランダム', command=self.__map_randmize)
         self.menu_combobox.grid(row=0, column=0, pady=5)
@@ -241,11 +250,11 @@ class Game_Window(tk.Frame):
         self.menu_settings_spinbox_speed['increment'] = 10
 
         self.menu_settings_button_log = ttk.Button(
-            self.menu_frame_settings, text='ログ保存場所')
+            self.menu_frame_settings, text='ログ保存場所', command=self.__change_log)
         self.menu_settings_button_log.grid(row=3, column=0)
 
         self.menu_settings_button_map = ttk.Button(
-            self.menu_frame_settings, text='マップ保存場所')
+            self.menu_frame_settings, text='マップ保存場所', command=self.__change_map)
         self.menu_settings_button_map.grid(row=3, column=1)
 
         self.menu_settings_box_log.grid(row=0, column=0, columnspan=2)
@@ -255,7 +264,8 @@ class Game_Window(tk.Frame):
         self.menu_settings_spinbox_speed.grid(row=2, column=1)
 
         # game_start
-        self.menu_game_start = ttk.Button(self.big_flame_menu, text='ゲーム開始', command=self.__start_game)
+        self.menu_game_start = ttk.Button(
+            self.big_flame_menu, text='ゲーム開始', command=self.__start_game)
 
         self.menu_game_start.grid(row=2, column=1, sticky=tk.W + tk.E)
 
@@ -273,11 +283,13 @@ class Game_Window(tk.Frame):
         label = ttk.Label(frame, textvariable=label_ver,
                           justify='left', anchor=tk.NW, font=self.font)
         spinbox_ver = tk.Variable()
-        spinbox = ttk.Spinbox(frame, textvariable=spinbox_ver, width=7, command=self.__set_config)
+        spinbox = ttk.Spinbox(frame, textvariable=spinbox_ver,
+                              width=7, command=self.__set_config)
         spinbox['from'] = 1024
         spinbox['to'] = 5000
         combobox_ver = tk.StringVar()
-        combobox = ttk.Combobox(frame, state='readonly', textvariable=combobox_ver, values=['User', 'Stay', 'Bot'], width=6)
+        combobox = ttk.Combobox(frame, state='readonly', textvariable=combobox_ver, values=[
+                                'User', 'Stay', 'Bot'], width=6)
         button = ttk.Button(frame, text='待機開始')
         label.grid(row=0, column=0, sticky=tk.W, columnspan=2)
         spinbox.grid(row=1, column=0)
@@ -287,13 +299,30 @@ class Game_Window(tk.Frame):
         return frame, label_ver, spinbox_ver, combobox_ver, button, spinbox, combobox
 
     def __map_randmize(self):
-        self.menu_combobox['values'] = (c := list(listup_maps()))
-        self.menu_map_ver.set(random.choice(c))
-    
+        self.listup_maps()
+        self.menu_map_ver.set(random.choice(self.menu_combobox['values']))
+
     def __set_config(self):
         config.d['CoolPort'] = self.menu_port_ver_cool
         config.d['HotPort'] = self.menu_port_ver_hot
+
+    def __change_log(self):
+        if (c := filedialog.askdirectory(initialdir=__file__)) != '':
+            config.d['LogPath'] = c
     
+    def __change_map(self):
+        if (c := filedialog.askdirectory(initialdir=__file__)) != '':
+            config.d['StagePath'] = c
+            self.listup_maps()
+    
+    def listup_maps(self):
+        l = []
+        for i in os.listdir(config.d['StagePath']):
+            if i[-6:] == '.CHmap':
+                l.append(os.path.basename(i)[:-6])
+        l.append('Blank')
+        self.menu_combobox['values'] = l
+
     def __cool_stay(self, _=None):
         if self.menu_mode_ver_cool.get() == 'Stay' and self.cool_state == 0:
             self.__cool_wait()
@@ -301,7 +330,7 @@ class Game_Window(tk.Frame):
     def __hot_stay(self, _=None):
         if self.menu_mode_ver_hot.get() == 'Stay' and self.hot_state == 0:
             self.__hot_wait()
-    
+
     def __cool_wait(self):
         self.pipe.send('C')
         if self.cool_state == 0:
@@ -319,7 +348,6 @@ class Game_Window(tk.Frame):
             self.menu_cool_combobox['state'] = 'readonly'
             self.menu_cool_spinbox['state'] = 'normal'
             self.menu_label_ver_cool.set('名前:\nIP:')
-            
 
     def __hot_wait(self):
         self.pipe.send('H')
@@ -338,19 +366,18 @@ class Game_Window(tk.Frame):
             self.menu_hot_combobox['state'] = 'readonly'
             self.menu_hot_spinbox['state'] = 'normal'
             self.menu_label_ver_hot.set('名前:\nIP:')
-            
-    
+
     def __start_game(self):
         if self.cool_state == self.hot_state == 2:
             self.__write_map()
             self.big_flame_game.tkraise()
             self.has_game_started = True
-            
+
             self.pipe.send('start')
             self.pipe.send(self.menu_map_ver.get())
             self.pipe.send(int(self.menu_settings_timeout_ver.get()))
             self.pipe.send(int(self.menu_settings_speed_ver.get()))
-    
+
     def __pipe_receive(self):
         while True:
             if self.cool_state == self.hot_state == 2:
@@ -364,7 +391,8 @@ class Game_Window(tk.Frame):
                         if self.pipe.recv() == 'connect':
                             self.cool_state = 2
                             self.menu_button_cool['text'] = '切断'
-                            self.menu_label_ver_cool.set(f'名前:{self.pipe.recv()}\nIP:{self.pipe.recv()}')
+                            self.menu_label_ver_cool.set(
+                                f'名前:{self.pipe.recv()}\nIP:{self.pipe.recv()}')
                         else:
                             self.cool_state = 0
                             self.menu_button_cool['text'] = '待機開始'
@@ -375,7 +403,8 @@ class Game_Window(tk.Frame):
                         if self.pipe.recv() == 'connect':
                             self.hot_state = 2
                             self.menu_button_hot['text'] = '切断'
-                            self.menu_label_ver_hot.set(f'名前:{self.pipe.recv()}\nIP:{self.pipe.recv()}')
+                            self.menu_label_ver_hot.set(
+                                f'名前:{self.pipe.recv()}\nIP:{self.pipe.recv()}')
                         else:
                             self.hot_state = 0
                             self.menu_button_hot['text'] = '待機開始'
@@ -383,33 +412,41 @@ class Game_Window(tk.Frame):
                             self.menu_hot_spinbox['state'] = 'normal'
                             self.menu_label_ver_hot.set('名前:\nIP:')
                     case 'Game':
-                        # アニメーション入れる                        
+                        # アニメーション入れる
                         cl = self.pipe.recv()
                         if cl != 'gameset':
                             nowpos = self.pipe.recv()
                             match self.pipe.recv():
                                 case 'w':
                                     i, j = self.pipe.recv()
-                                    self.game_canvas.moveto(cl, i * 25 + 3, j * 25 + 3)
+                                    self.game_canvas.moveto(
+                                        cl, i * 25 + 3, j * 25 + 3)
                                     if self.pipe.recv() == 'i':
-                                        self.game_canvas.create_image(15 + nowpos[0] * 25, 15 + nowpos[1] * 25, image=self.wall_image)
-                                        self.game_canvas.delete(self.game_screen_id[j][i])
+                                        self.game_canvas.create_image(
+                                            15 + nowpos[0] * 25, 15 + nowpos[1] * 25, image=self.wall_image)
+                                        self.game_canvas.delete(
+                                            self.game_screen_id[j][i])
                                         self.points[cl] += 1
                                 case 'p':
                                     i, j = self.pipe.recv()
-                                    self.game_canvas.create_image(15 + i * 25, 15 + j * 25, image=self.wall_image)
-                            self.labels[cl].set(f'Score:{self.points[cl] * 3 + (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
+                                    self.game_canvas.create_image(
+                                        15 + i * 25, 15 + j * 25, image=self.wall_image)
+                            self.labels[cl].set(
+                                f'Score:{self.points[cl] * 3 + (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
                             if cl == 'Hot':
-                                self.var_prog_turn.set(self.var_prog_turn.get() + 1)
-                                self.var_turn.set(f'Turn:{self.whole_turn - self.var_prog_turn.get()}')
-                        
+                                self.var_prog_turn.set(
+                                    self.var_prog_turn.get() + 1)
+                                self.var_turn.set(
+                                    f'Turn:{self.whole_turn - self.var_prog_turn.get()}')
+
                     case 'Gameset':
                         cl = self.pipe.recv()
                         print(cl)
-                        self.var_turn.set(f'Turn:{self.whole_turn - self.var_prog_turn.get()}')
+                        self.var_turn.set(
+                            f'Turn:{self.whole_turn - self.var_prog_turn.get()}')
                         self.var_prog_turn.set(self.var_prog_turn.get() - 1)
                         print(self.whole_turn - self.var_prog_turn.get())
-                        match self.pipe.recv(): # ChaserServer.py game_setを参照してください
+                        match self.pipe.recv():  # ChaserServer.py game_setを参照してください
                             case 0:
                                 if self.points['Cool'] == self.points['Hot']:
                                     self.var_winner.set('DRAW')
@@ -419,30 +456,40 @@ class Game_Window(tk.Frame):
                                     self.var_winner.set('Hot WIN')
                             case 1:
                                 self.var_winner.set(f'{cl} WIN')
-                                self.labels[cl].set(f'Score:{self.points[cl] * 3 + (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
+                                self.labels[cl].set(
+                                    f'Score:{self.points[cl] * 3 + (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
                                 cl = self.inverse_client(cl)
-                                self.labels[cl].set(f'Score:{self.points[cl] * 3 - (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
+                                self.labels[cl].set(
+                                    f'Score:{self.points[cl] * 3 - (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
                             case 2:
                                 self.var_winner.set(f'{cl} WIN')
-                                self.labels[cl].set(f'Score:{self.points[cl] * 3 + (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
+                                self.labels[cl].set(
+                                    f'Score:{self.points[cl] * 3 + (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
                                 cl = self.inverse_client(cl)
-                                self.labels[cl].set(f'Score:{self.points[cl] * 3 - (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
+                                self.labels[cl].set(
+                                    f'Score:{self.points[cl] * 3 - (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
                             case 3:
                                 self.var_winner.set(f'{cl} LOSE')
-                                self.labels[cl].set(f'Score:{self.points[cl] * 3 - (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
+                                self.labels[cl].set(
+                                    f'Score:{self.points[cl] * 3 - (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
                                 cl = self.inverse_client(cl)
-                                self.labels[cl].set(f'Score:{self.points[cl] * 3 + (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
+                                self.labels[cl].set(
+                                    f'Score:{self.points[cl] * 3 + (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
                             case 4:
                                 self.var_winner.set(f'{cl} LOSE')
-                                self.labels[cl].set(f'Score:{self.points[cl] * 3 - (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
+                                self.labels[cl].set(
+                                    f'Score:{self.points[cl] * 3 - (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
                                 cl = self.inverse_client(cl)
-                                self.labels[cl].set(f'Score:{self.points[cl] * 3 + (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
+                                self.labels[cl].set(
+                                    f'Score:{self.points[cl] * 3 + (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
                             case 5:
                                 self.var_winner.set(f'{cl} LOSE')
-                                self.labels[cl].set(f'Score:{self.points[cl] * 3 - (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
+                                self.labels[cl].set(
+                                    f'Score:{self.points[cl] * 3 - (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
                                 cl = self.inverse_client(cl)
-                                self.labels[cl].set(f'Score:{self.points[cl] * 3 + (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
-        
+                                self.labels[cl].set(
+                                    f'Score:{self.points[cl] * 3 + (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
+
     def inverse_client(self, cl) -> str:
         '''
         cl と 反対のクライアントを返す
@@ -452,14 +499,13 @@ class Game_Window(tk.Frame):
         else:
             return 'Hot'
 
-
     def __write_map(self):
         game_map = []
         hot = []
         cool = []
-        
+
         self.game_screen_id = [[-1 for i in range(15)] for i in range(17)]
-        
+
         try:
             with open(config.d['StagePath'] + r'/' + self.menu_map_ver.get() + '.CHmap', 'r') as f:
                 j = json.load(f)
@@ -478,28 +524,27 @@ class Game_Window(tk.Frame):
         for i, x in enumerate(game_map):
             for j, y in enumerate(x):
                 if hot == [j, i]:
-                    self.game_canvas.create_image(15 + j * 25, 15 + i * 25, image=self.hot_image, tag='Hot')
+                    self.game_canvas.create_image(
+                        15 + j * 25, 15 + i * 25, image=self.hot_image, tag='Hot')
                 if cool == [j, i]:
-                    self.game_canvas.create_image(15 + j * 25, 15 + i * 25, image=self.cool_image, tag='Cool')
+                    self.game_canvas.create_image(
+                        15 + j * 25, 15 + i * 25, image=self.cool_image, tag='Cool')
                 match y:
                     case 2:
-                        self.game_canvas.create_image(15 + j * 25, 15 + i * 25, image=self.wall_image)
+                        self.game_canvas.create_image(
+                            15 + j * 25, 15 + i * 25, image=self.wall_image)
                     case 3:
-                        self.game_screen_id[i][j] = self.game_canvas.create_image(15 + j * 25, 15 + i * 25, image=self.item_image)
-
-def listup_maps() -> Generator[str, None, None]:
-    for i in os.listdir(config.d['StagePath']):
-        if i[-6:] == '.CHmap':
-            yield os.path.basename(i)[:-6]
-    yield 'Blank'
+                        self.game_screen_id[i][j] = self.game_canvas.create_image(
+                            15 + j * 25, 15 + i * 25, image=self.item_image)
 
 
 if __name__ == '__main__':
     config = ReadConfig()
-    
+
     game_pipe, window_pipe = multiprocessing.Pipe()
 
-    game = multiprocessing.Process(target=Game, name='Server', args=(game_pipe,))
+    game = multiprocessing.Process(
+        target=Game, name='Server', args=(game_pipe,), daemon=True)
     game.start()
 
     root = tk.Tk()

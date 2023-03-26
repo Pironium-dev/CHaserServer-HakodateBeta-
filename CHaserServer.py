@@ -1,5 +1,6 @@
 import socket
 import multiprocessing
+import threading
 import time
 import glob
 import random
@@ -8,7 +9,10 @@ from typing import NoReturn
 
 from ReadConfig import ReadConfig
 
-# 壁:2 クライアント:1 アイテム:3 
+
+# 壁:2 クライアント:1 アイテム:3
+
+
 class Game:
     direction: dict[str, tuple[int, int]] = {
         'r': (1, 0), 'l': (-1, 0), 'd': (0, 1), 'u': (0, -1)}
@@ -19,7 +23,7 @@ class Game:
         self.hot_items = 0
         self.cool_name = ''
         self.hot_name = ''
-        
+
         self.cool_port = 2009
         self.hot_port = 2010
         self.cool_mode = ''
@@ -29,7 +33,7 @@ class Game:
         self.map = []
         self.hot_place = [0, 0]
         self.cool_place = [0, 0]
-        
+
         self.timeout = 0
         self.map_name = 'Blank'
 
@@ -37,10 +41,10 @@ class Game:
         for_hot_pipe, self.hot_pipe = multiprocessing.Pipe()
         self.window_pipe = pipe
 
-        self.cool_receiver = multiprocessing.Process(
+        self.cool_receiver = threading.Thread(
             target=Receiver, args=(for_cool_pipe,), name='Cool')
         self.cool_receiver.daemon = True
-        self.hot_receiver = multiprocessing.Process(
+        self.hot_receiver = threading.Thread(
             target=Receiver, args=(for_hot_pipe,), name='Hot')
         self.hot_receiver.daemon = True
 
@@ -70,10 +74,10 @@ class Game:
                     case 'start':
                         self.map_name = self.window_pipe.recv()
                         self.change_map()
-                        
+
                         self.timeout = self.window_pipe.recv()
                         self.speed = self.window_pipe.recv()
-                        
+
                         self.cool_pipe.send('s')
                         self.cool_pipe.send(self.timeout)
 
@@ -84,7 +88,7 @@ class Game:
                         self.hot_disconnect()
                         self.cool_disconnect()
                         exit()
-            
+
             self.accept_connection('Cool', self.cool_pipe)
             self.accept_connection('Hot', self.hot_pipe)
 
@@ -97,7 +101,7 @@ class Game:
             time.sleep(self.speed / 1000)
 
         self.game_set('', 0)
-    
+
     def accept_connection(self, cl, pipe):
         if pipe.poll():
             match pipe.recv():
@@ -170,14 +174,14 @@ class Game:
         pipe.send(self.output_square(True, *self.cool_place))
         next_place = place.copy()
         r = pipe.recv()
-        
+
         self.window_pipe.send('Game')
         self.window_pipe.send(cl)
         self.window_pipe.send(place)
         self.window_pipe.send(r[0])
-        
+
         is_getted_item = False
-        
+
         match r[0]:
             case 'w':
                 next_place[0] += Game.direction[r[1]][0]
@@ -264,14 +268,15 @@ class Game:
             self.hot_pipe.send('c')
             self.hot_pipe.send(self.hot_port)
             self.hot_pipe.send(self.hot_mode)
-    
+
     def cool_disconnect(self):
         self.cool_pipe.send('d')
         self.cool_name = ''
-    
+
     def hot_disconnect(self):
         self.hot_pipe.send('d')
         self.hot_name = ''
+
 
 class Receiver:
     def __init__(self, pipe) -> None:
@@ -285,7 +290,7 @@ class Receiver:
         self.flag_to_cilant_socket = False  # to_cliant_socket が つながったかどうか
         self.flag_bot_name = False
         self.flag_ended = False
-        
+
         self.flag_error = False
 
         while True:
@@ -366,7 +371,7 @@ class Receiver:
                             self.pipe.recv().encode('utf-8'))
                         if self.socket_receive() != '#':
                             print('closed')
-                            
+
                             self.close()
                     case 'd':
                         self.close()
