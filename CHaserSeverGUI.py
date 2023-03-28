@@ -19,9 +19,7 @@ from CHaserServer import Game
 '''
 Bot
 ログ保存
-
 メニューのマップ表示
-設定保存
 マップ制作
 '''
 
@@ -30,7 +28,9 @@ Bot
 スコア表示
 ファイル場所
 マップ場所
+設定保存
 '''
+
 
 class Game_Window(tk.Frame):
     def __init__(self, master: tk.Tk, pipe):
@@ -229,6 +229,7 @@ class Game_Window(tk.Frame):
         タイムアウト
         ログ保存場所
         マップ保存場所
+        設定リセット
         '''
         self.menu_frame_settings = ttk.Labelframe(
             self.big_flame_menu, text='設定')
@@ -258,6 +259,10 @@ class Game_Window(tk.Frame):
         self.menu_settings_button_map = ttk.Button(
             self.menu_frame_settings, text='マップ保存場所', command=self.change_map)
         self.menu_settings_button_map.grid(row=3, column=1)
+
+        self.menu_settings_button_reset = ttk.Button(
+            self.menu_frame_settings, text='設定のリセット', command=self.reset_config)
+        self.menu_settings_button_reset.grid(row=4, column=0, columnspan=2)
 
         self.menu_settings_box_log.grid(row=0, column=0, columnspan=2)
         self.menu_settings_label_timeout.grid(row=1, column=0)
@@ -304,7 +309,7 @@ class Game_Window(tk.Frame):
         self.listup_maps()
         self.menu_map_ver.set(random.choice(self.menu_combobox['values']))
 
-    def save_config(self, flag = True):
+    def save_config(self, flag=True):
         # flag が True なら終了
         config.d['CoolPort'] = int(self.menu_port_ver_cool.get())
         config.d['HotPort'] = int(self.menu_port_ver_hot.get())
@@ -318,15 +323,28 @@ class Game_Window(tk.Frame):
         if flag:
             self.master.destroy()
 
+    def reset_config(self):
+        config.reset()
+        self.hot_disconnect()
+        self.cool_disconnect()
+        self.menu_port_ver_cool.set(config.d['CoolPort'])
+        self.menu_port_ver_hot.set(config.d['HotPort'])
+        self.menu_settings_speed_ver.set(config.d['GameSpeed'])
+        self.menu_settings_timeout_ver.set(config.d['TimeOut'])
+        self.menu_hot_combobox.set(config.d['HotMode'])
+        self.menu_cool_combobox.set(config.d['CoolMode'])
+        self.menu_map_ver.set(config.d['NextMap'])
+        self.menu_settings_ver_log.set(config.d['Log'])
+
     def change_log(self):
         if (c := filedialog.askdirectory(initialdir=__file__)) != '':
             config.d['LogPath'] = c
-    
+
     def change_map(self):
         if (c := filedialog.askdirectory(initialdir=__file__)) != '':
             config.d['StagePath'] = c
             self.listup_maps()
-    
+
     def listup_maps(self):
         l = []
         for i in os.listdir(config.d['StagePath']):
@@ -354,12 +372,7 @@ class Game_Window(tk.Frame):
             self.menu_cool_combobox['state'] = 'disable'
             self.menu_cool_spinbox['state'] = 'disable'
         else:
-            self.pipe.send('disconnect')
-            self.cool_state = 0
-            self.menu_button_cool['text'] = '待機開始'
-            self.menu_cool_combobox['state'] = 'readonly'
-            self.menu_cool_spinbox['state'] = 'normal'
-            self.menu_label_ver_cool.set('名前:\nIP:')
+            self.cool_disconnect()
 
     def hot_wait(self):
         self.pipe.send('H')
@@ -372,12 +385,23 @@ class Game_Window(tk.Frame):
             self.menu_hot_combobox['state'] = 'disable'
             self.menu_hot_spinbox['state'] = 'disable'
         else:
-            self.pipe.send('disconnect')
-            self.hot_state = 0
-            self.menu_button_hot['text'] = '待機開始'
-            self.menu_hot_combobox['state'] = 'readonly'
-            self.menu_hot_spinbox['state'] = 'normal'
-            self.menu_label_ver_hot.set('名前:\nIP:')
+            self.hot_disconnect()
+
+    def cool_disconnect(self):
+        self.pipe.send('disconnect')
+        self.cool_state = 0
+        self.menu_button_cool['text'] = '待機開始'
+        self.menu_cool_combobox['state'] = 'readonly'
+        self.menu_cool_spinbox['state'] = 'normal'
+        self.menu_label_ver_cool.set('名前:\nIP:')
+
+    def hot_disconnect(self):
+        self.pipe.send('disconnect')
+        self.hot_state = 0
+        self.menu_button_hot['text'] = '待機開始'
+        self.menu_hot_combobox['state'] = 'readonly'
+        self.menu_hot_spinbox['state'] = 'normal'
+        self.menu_label_ver_hot.set('名前:\nIP:')
 
     def start_game(self):
         if self.cool_state == self.hot_state == 2:
@@ -549,6 +573,7 @@ class Game_Window(tk.Frame):
                     case 3:
                         self.game_screen_id[i][j] = self.game_canvas.create_image(
                             15 + j * 25, 15 + i * 25, image=self.item_image)
+
 
 if __name__ == '__main__':
     config = ReadConfig()
