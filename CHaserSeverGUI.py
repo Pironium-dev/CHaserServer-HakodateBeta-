@@ -39,7 +39,7 @@ class Game_Window(tk.Frame):
 
         tk.Frame.__init__(self, master=master)
         master.title('MainWindow')
-        master.protocol('WM_DELETE_WINDOW', )
+        master.protocol('WM_DELETE_WINDOW', self.save_config)
 
         self.points = {'Cool': 0, 'Hot': 0}
         self.labels = {}  # ゲームのポイントのラベルをまとめたもの
@@ -48,8 +48,8 @@ class Game_Window(tk.Frame):
         self.big_flame_menu = ttk.Frame()
         self.big_flame_game = ttk.Frame()
 
-        self.__game_screen()
-        self.__menu_screen()
+        self.game_screen()
+        self.menu_screen()
 
         self.big_flame_menu.grid(row=0, column=0, sticky=tk.NSEW)
 
@@ -63,7 +63,7 @@ class Game_Window(tk.Frame):
 
         self.has_game_started = False
         # self.__after()
-        self.receive = threading.Thread(target=self.__pipe_receive)
+        self.receive = threading.Thread(target=self.pipe_receive)
         self.receive.daemon = True
         self.receive.start()
         self.big_flame_menu.tkraise()
@@ -71,7 +71,7 @@ class Game_Window(tk.Frame):
     def shutdown(self):
         self.pipe.send('shutdown')
 
-    def __game_screen(self):
+    def game_screen(self):
         # frame
         self.game_frame_status = ttk.Frame(self.big_flame_game)
         self.game_frame_cool = ttk.Labelframe(self.big_flame_game, text='Cool')
@@ -161,7 +161,7 @@ class Game_Window(tk.Frame):
 
         self.big_flame_game.grid(row=0, column=0, sticky=tk.NSEW)
 
-    def __menu_screen(self):
+    def menu_screen(self):
         # tk_setting
         self.font = ('', 10)
         self.big_flame_menu.columnconfigure(0, weight=1)
@@ -172,27 +172,27 @@ class Game_Window(tk.Frame):
         self.menu_settings_ver_log.set(config.d['Log'])
 
         self.menu_settings_timeout_ver = tk.Variable()
-        self.menu_settings_timeout_ver.set(2000)
+        self.menu_settings_timeout_ver.set(config.d['TimeOut'])
 
         self.menu_settings_speed_ver = tk.Variable()
-        self.menu_settings_speed_ver.set(100)
+        self.menu_settings_speed_ver.set(config.d['GameSpeed'])
 
         self.menu_map_ver = tk.StringVar()
         self.menu_map_ver.set(config.d['NextMap'])
 
         # Cool
-        self.menu_frame_cool, self.menu_label_ver_cool, self.menu_port_ver_cool, self.menu_mode_ver_cool, self.menu_button_cool, self.menu_cool_spinbox,  self.menu_cool_combobox = self.__cliants_menu(
+        self.menu_frame_cool, self.menu_label_ver_cool, self.menu_port_ver_cool, self.menu_mode_ver_cool, self.menu_button_cool, self.menu_cool_spinbox,  self.menu_cool_combobox = self.cliants_menu(
             'COOL')
-        self.menu_button_cool['command'] = self.__cool_wait
-        self.menu_cool_combobox.bind('<<ComboboxSelected>>', self.__cool_stay)
+        self.menu_button_cool['command'] = self.cool_wait
+        self.menu_cool_combobox.bind('<<ComboboxSelected>>', self.cool_stay)
         self.menu_port_ver_cool.set(config.d['CoolPort'])
         self.menu_mode_ver_cool.set(config.d['CoolMode'])
 
         # Hot
-        self.menu_frame_hot, self.menu_label_ver_hot, self.menu_port_ver_hot, self.menu_mode_ver_hot, self.menu_button_hot, self.menu_hot_spinbox,  self.menu_hot_combobox = self.__cliants_menu(
+        self.menu_frame_hot, self.menu_label_ver_hot, self.menu_port_ver_hot, self.menu_mode_ver_hot, self.menu_button_hot, self.menu_hot_spinbox,  self.menu_hot_combobox = self.cliants_menu(
             'HOT')
-        self.menu_button_hot['command'] = self.__hot_wait
-        self.menu_hot_combobox.bind('<<ComboboxSelected>>', self.__hot_stay)
+        self.menu_button_hot['command'] = self.hot_wait
+        self.menu_hot_combobox.bind('<<ComboboxSelected>>', self.hot_stay)
         self.menu_port_ver_hot.set(config.d['HotPort'])
         self.menu_mode_ver_hot.set(config.d['HotMode'])
 
@@ -209,9 +209,11 @@ class Game_Window(tk.Frame):
         self.menu_combobox = ttk.Combobox(
             self.menu_frame_map_select, textvariable=self.menu_map_ver, state='readonly')
         self.menu_map_randomize = ttk.Button(
-            self.menu_frame_map_select, text='ランダム', command=self.__map_randmize)
+            self.menu_frame_map_select, text='ランダム', command=self.map_randmize)
         self.menu_combobox.grid(row=0, column=0, pady=5)
         self.menu_map_randomize.grid(row=0, column=1)
+
+        self.listup_maps()
 
         # server_address
         self.menu_server_address = ttk.Label(
@@ -250,11 +252,11 @@ class Game_Window(tk.Frame):
         self.menu_settings_spinbox_speed['increment'] = 10
 
         self.menu_settings_button_log = ttk.Button(
-            self.menu_frame_settings, text='ログ保存場所', command=self.__change_log)
+            self.menu_frame_settings, text='ログ保存場所', command=self.change_log)
         self.menu_settings_button_log.grid(row=3, column=0)
 
         self.menu_settings_button_map = ttk.Button(
-            self.menu_frame_settings, text='マップ保存場所', command=self.__change_map)
+            self.menu_frame_settings, text='マップ保存場所', command=self.change_map)
         self.menu_settings_button_map.grid(row=3, column=1)
 
         self.menu_settings_box_log.grid(row=0, column=0, columnspan=2)
@@ -265,7 +267,7 @@ class Game_Window(tk.Frame):
 
         # game_start
         self.menu_game_start = ttk.Button(
-            self.big_flame_menu, text='ゲーム開始', command=self.__start_game)
+            self.big_flame_menu, text='ゲーム開始', command=self.start_game)
 
         self.menu_game_start.grid(row=2, column=1, sticky=tk.W + tk.E)
 
@@ -276,7 +278,7 @@ class Game_Window(tk.Frame):
         self.menu_frame_map_select.grid(row=2, column=0)
         self.menu_frame_settings.grid(row=1, column=1)
 
-    def __cliants_menu(self, name):
+    def cliants_menu(self, name):
         label_ver = tk.StringVar(value='名前:\nIP:')
         frame = ttk.Labelframe(self.big_flame_menu, text=name)
         frame.columnconfigure(2, weight=1)
@@ -284,7 +286,7 @@ class Game_Window(tk.Frame):
                           justify='left', anchor=tk.NW, font=self.font)
         spinbox_ver = tk.Variable()
         spinbox = ttk.Spinbox(frame, textvariable=spinbox_ver,
-                              width=7, command=self.__set_config)
+                              width=7)
         spinbox['from'] = 1024
         spinbox['to'] = 5000
         combobox_ver = tk.StringVar()
@@ -298,19 +300,29 @@ class Game_Window(tk.Frame):
 
         return frame, label_ver, spinbox_ver, combobox_ver, button, spinbox, combobox
 
-    def __map_randmize(self):
+    def map_randmize(self):
         self.listup_maps()
         self.menu_map_ver.set(random.choice(self.menu_combobox['values']))
 
-    def __set_config(self):
-        config.d['CoolPort'] = self.menu_port_ver_cool
-        config.d['HotPort'] = self.menu_port_ver_hot
+    def save_config(self, flag = True):
+        # flag が True なら終了
+        config.d['CoolPort'] = int(self.menu_port_ver_cool.get())
+        config.d['HotPort'] = int(self.menu_port_ver_hot.get())
+        config.d['GameSpeed'] = int(self.menu_settings_speed_ver.get())
+        config.d['TimeOut'] = int(self.menu_settings_timeout_ver.get())
+        config.d['HotMode'] = self.menu_hot_combobox.get()
+        config.d['CoolMode'] = self.menu_cool_combobox.get()
+        config.d['NextMap'] = self.menu_map_ver.get()
+        config.d['Log'] = self.menu_settings_ver_log.get()
+        config.save()
+        if flag:
+            self.master.destroy()
 
-    def __change_log(self):
+    def change_log(self):
         if (c := filedialog.askdirectory(initialdir=__file__)) != '':
             config.d['LogPath'] = c
     
-    def __change_map(self):
+    def change_map(self):
         if (c := filedialog.askdirectory(initialdir=__file__)) != '':
             config.d['StagePath'] = c
             self.listup_maps()
@@ -323,15 +335,15 @@ class Game_Window(tk.Frame):
         l.append('Blank')
         self.menu_combobox['values'] = l
 
-    def __cool_stay(self, _=None):
+    def cool_stay(self, _=None):
         if self.menu_mode_ver_cool.get() == 'Stay' and self.cool_state == 0:
-            self.__cool_wait()
+            self.cool_wait()
 
-    def __hot_stay(self, _=None):
+    def hot_stay(self, _=None):
         if self.menu_mode_ver_hot.get() == 'Stay' and self.hot_state == 0:
-            self.__hot_wait()
+            self.hot_wait()
 
-    def __cool_wait(self):
+    def cool_wait(self):
         self.pipe.send('C')
         if self.cool_state == 0:
             self.pipe.send('connect')
@@ -349,7 +361,7 @@ class Game_Window(tk.Frame):
             self.menu_cool_spinbox['state'] = 'normal'
             self.menu_label_ver_cool.set('名前:\nIP:')
 
-    def __hot_wait(self):
+    def hot_wait(self):
         self.pipe.send('H')
         if self.hot_state == 0:
             self.pipe.send('connect')
@@ -367,9 +379,10 @@ class Game_Window(tk.Frame):
             self.menu_hot_spinbox['state'] = 'normal'
             self.menu_label_ver_hot.set('名前:\nIP:')
 
-    def __start_game(self):
+    def start_game(self):
         if self.cool_state == self.hot_state == 2:
-            self.__write_map()
+            self.write_map()
+            self.save_config(False)
             self.big_flame_game.tkraise()
             self.has_game_started = True
 
@@ -378,7 +391,7 @@ class Game_Window(tk.Frame):
             self.pipe.send(int(self.menu_settings_timeout_ver.get()))
             self.pipe.send(int(self.menu_settings_speed_ver.get()))
 
-    def __pipe_receive(self):
+    def pipe_receive(self):
         while True:
             if self.cool_state == self.hot_state == 2:
                 self.menu_game_start['state'] = 'normal'
@@ -499,7 +512,7 @@ class Game_Window(tk.Frame):
         else:
             return 'Hot'
 
-    def __write_map(self):
+    def write_map(self):
         game_map = []
         hot = []
         cool = []
@@ -536,7 +549,6 @@ class Game_Window(tk.Frame):
                     case 3:
                         self.game_screen_id[i][j] = self.game_canvas.create_image(
                             15 + j * 25, 15 + i * 25, image=self.item_image)
-
 
 if __name__ == '__main__':
     config = ReadConfig()
