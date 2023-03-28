@@ -11,19 +11,17 @@ import multiprocessing
 import json
 import threading
 
-from typing import Generator
-
 from ReadConfig import ReadConfig
 from CHaserServer import Game
 
 '''
-Bot
-ログ保存
+?ログ保存?
 メニューのマップ表示
 マップ制作
 '''
 
 '''
+Bot
 通信書き換え
 スコア表示
 ファイル場所

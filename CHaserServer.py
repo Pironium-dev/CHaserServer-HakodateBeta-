@@ -2,8 +2,7 @@ import socket
 import multiprocessing
 import threading
 import time
-import glob
-import random
+import os
 import json
 from typing import NoReturn
 
@@ -300,7 +299,9 @@ class Receiver:
                         self.port = pipe.recv()
                         self.mode = pipe.recv()
                         self.socket = socket.socket()
-                        if self.mode == 'User':
+                        if self.mode != 'Stay':
+                            if self.mode == 'Bot':
+                                os.system('start testCliant.py ' + str(self.port))
                             self.socket.setblocking(False)
                             self.socket.bind(('', int(self.port)))
                             self.socket.listen()
@@ -315,7 +316,7 @@ class Receiver:
                     case 's':  # start
                         break
 
-            if self.mode == 'Stay':  # Bot 作ってない
+            if self.mode == 'Stay':
                 if not self.flag_bot_name:
                     self.flag_socket = False
                     pipe.send('connect')
