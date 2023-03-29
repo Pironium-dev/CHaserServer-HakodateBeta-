@@ -456,16 +456,19 @@ class Game_Window(tk.Frame):
                                     i, j = self.pipe.recv()
                                     self.game_canvas.moveto(
                                         cl, i * 25 + 3, j * 25 + 3)
-                                    if self.pipe.recv() == 'i':
+                                    if (c := self.pipe.recv()) == 'i':
                                         self.game_canvas.create_image(
                                             15 + nowpos[0] * 25, 15 + nowpos[1] * 25, image=self.wall_image)
                                         self.game_canvas.delete(
                                             self.game_screen_id[j][i])
                                         self.points[cl] += 1
+                                    elif c == 'Gameset':
+                                        self.game_set()
                                 case 'p':
                                     i, j = self.pipe.recv()
                                     self.game_canvas.create_image(
                                         15 + i * 25, 15 + j * 25, image=self.wall_image)
+                            
                             self.labels[cl].set(
                                 f'Score:{self.points[cl] * 3 + (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
                             if cl == 'Hot':
@@ -473,55 +476,11 @@ class Game_Window(tk.Frame):
                                     self.var_prog_turn.get() + 1)
                                 self.var_turn.set(
                                     f'Turn:{self.whole_turn - self.var_prog_turn.get()}')
+                        else:
+                            self.game_set()
 
                     case 'Gameset':
-                        cl = self.pipe.recv()
-                        self.var_turn.set(
-                            f'Turn:{self.whole_turn - self.var_prog_turn.get()}')
-                        self.var_prog_turn.set(self.var_prog_turn.get() - 1)
-                        match self.pipe.recv():  # ChaserServer.py game_setを参照してください
-                            case 0:
-                                if self.points['Cool'] == self.points['Hot']:
-                                    self.var_winner.set('DRAW')
-                                elif self.points['Cool'] > self.points['Hot']:
-                                    self.var_winner.set('Cool WIN')
-                                else:
-                                    self.var_winner.set('Hot WIN')
-                            case 1:
-                                self.var_winner.set(f'{cl} WIN')
-                                self.labels[cl].set(
-                                    f'Score:{self.points[cl] * 3 + (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
-                                cl = self.inverse_client(cl)
-                                self.labels[cl].set(
-                                    f'Score:{self.points[cl] * 3 - (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
-                            case 2:
-                                self.var_winner.set(f'{cl} WIN')
-                                self.labels[cl].set(
-                                    f'Score:{self.points[cl] * 3 + (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
-                                cl = self.inverse_client(cl)
-                                self.labels[cl].set(
-                                    f'Score:{self.points[cl] * 3 - (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
-                            case 3:
-                                self.var_winner.set(f'{cl} LOSE')
-                                self.labels[cl].set(
-                                    f'Score:{self.points[cl] * 3 - (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
-                                cl = self.inverse_client(cl)
-                                self.labels[cl].set(
-                                    f'Score:{self.points[cl] * 3 + (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
-                            case 4:
-                                self.var_winner.set(f'{cl} LOSE')
-                                self.labels[cl].set(
-                                    f'Score:{self.points[cl] * 3 - (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
-                                cl = self.inverse_client(cl)
-                                self.labels[cl].set(
-                                    f'Score:{self.points[cl] * 3 + (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
-                            case 5:
-                                self.var_winner.set(f'{cl} LOSE')
-                                self.labels[cl].set(
-                                    f'Score:{self.points[cl] * 3 - (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
-                                cl = self.inverse_client(cl)
-                                self.labels[cl].set(
-                                    f'Score:{self.points[cl] * 3 + (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
+                        self.game_set()
 
     def inverse_client(self, cl) -> str:
         '''
@@ -570,6 +529,54 @@ class Game_Window(tk.Frame):
                         self.game_screen_id[i][j] = self.game_canvas.create_image(
                             15 + j * 25, 15 + i * 25, image=self.item_image)
 
+    def game_set(self):
+        cl = self.pipe.recv()
+        self.var_turn.set(
+            f'Turn:{self.whole_turn - self.var_prog_turn.get()}')
+        self.var_prog_turn.set(self.var_prog_turn.get() - 1)
+        match self.pipe.recv():  # ChaserServer.py game_setを参照してください
+            case 0:
+                if self.points['Cool'] == self.points['Hot']:
+                    self.var_winner.set('DRAW')
+                elif self.points['Cool'] > self.points['Hot']:
+                    self.var_winner.set('Cool WIN')
+                else:
+                    self.var_winner.set('Hot WIN')
+            case 1:
+                self.var_winner.set(f'{cl} WIN')
+                self.labels[cl].set(
+                    f'Score:{self.points[cl] * 3 + (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
+                cl = self.inverse_client(cl)
+                self.labels[cl].set(
+                    f'Score:{self.points[cl] * 3 - (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
+            case 2:
+                self.var_winner.set(f'{cl} WIN')
+                self.labels[cl].set(
+                    f'Score:{self.points[cl] * 3 + (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
+                cl = self.inverse_client(cl)
+                self.labels[cl].set(
+                    f'Score:{self.points[cl] * 3 - (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
+            case 3:
+                self.var_winner.set(f'{cl} LOSE')
+                self.labels[cl].set(
+                    f'Score:{self.points[cl] * 3 - (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
+                cl = self.inverse_client(cl)
+                self.labels[cl].set(
+                    f'Score:{self.points[cl] * 3 + (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
+            case 4:
+                self.var_winner.set(f'{cl} LOSE')
+                self.labels[cl].set(
+                    f'Score:{self.points[cl] * 3 - (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
+                cl = self.inverse_client(cl)
+                self.labels[cl].set(
+                    f'Score:{self.points[cl] * 3 + (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
+            case 5:
+                self.var_winner.set(f'{cl} LOSE')
+                self.labels[cl].set(
+                    f'Score:{self.points[cl] * 3 - (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
+                cl = self.inverse_client(cl)
+                self.labels[cl].set(
+                    f'Score:{self.points[cl] * 3 + (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
 
 if __name__ == '__main__':
     config = ReadConfig()

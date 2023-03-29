@@ -404,5 +404,8 @@ class Receiver:
         self.flag_bot_name = False
         self.to_cliant_socket.shutdown(socket.SHUT_RDWR)
         self.to_cliant_socket.close()
-        self.pipe.send('Cl')
+        try:
+            self.pipe.send('Cl')
+        except BrokenPipeError:
+            pass
         exit()
