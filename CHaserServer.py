@@ -233,7 +233,7 @@ class Game:
         3: clが自分を囲んだ
         4: clがブロックと重なった
         5: clが通信エラー
-        '''
+        ''''''
         match state:
             case 0:
                 print('ゲームが終了しました')
@@ -249,6 +249,7 @@ class Game:
                 print(f'{cl}がブロックと重なりました')
             case 5:
                 print(f'{cl}が通信エラーしました')
+        '''
         self.window_pipe.send('Gameset')
         self.window_pipe.send(cl)
         self.window_pipe.send(state)
@@ -301,7 +302,7 @@ class Receiver:
                         self.socket = socket.socket()
                         if self.mode != 'Stay':
                             if self.mode == 'Bot':
-                                os.system('start testCliant.py ' + str(self.port))
+                                os.system('start Bot.py ' + str(self.port))
                             self.socket.setblocking(False)
                             self.socket.bind(('', int(self.port)))
                             self.socket.listen()
@@ -371,8 +372,6 @@ class Receiver:
                         self.to_cliant_socket.send(
                             self.pipe.recv().encode('utf-8'))
                         if self.socket_receive() != '#':
-                            print('closed')
-
                             self.close()
                     case 'd':
                         self.close()
@@ -406,5 +405,4 @@ class Receiver:
         self.to_cliant_socket.shutdown(socket.SHUT_RDWR)
         self.to_cliant_socket.close()
         self.pipe.send('Cl')
-        print('Closed')
         exit()

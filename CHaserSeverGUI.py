@@ -15,7 +15,7 @@ from ReadConfig import ReadConfig
 from CHaserServer import Game
 
 '''
-?ログ保存?
+ログ保存
 メニューのマップ表示
 マップ制作
 '''
@@ -476,11 +476,9 @@ class Game_Window(tk.Frame):
 
                     case 'Gameset':
                         cl = self.pipe.recv()
-                        print(cl)
                         self.var_turn.set(
                             f'Turn:{self.whole_turn - self.var_prog_turn.get()}')
                         self.var_prog_turn.set(self.var_prog_turn.get() - 1)
-                        print(self.whole_turn - self.var_prog_turn.get())
                         match self.pipe.recv():  # ChaserServer.py game_setを参照してください
                             case 0:
                                 if self.points['Cool'] == self.points['Hot']:
