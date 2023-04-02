@@ -17,11 +17,12 @@ class Game:
         'r': (1, 0), 'l': (-1, 0), 'd': (0, 1), 'u': (0, -1)}
 
     def __init__(self, pipe) -> None:
-        self.map_directory = ReadConfig().d['StagePath']
+        ReadConfig().d['StagePath']
         self.cool_items = 0
         self.hot_items = 0
         self.cool_name = ''
         self.hot_name = ''
+        
 
         self.cool_port = 2009
         self.hot_port = 2010
@@ -46,6 +47,8 @@ class Game:
         self.hot_receiver = threading.Thread(
             target=Receiver, args=(for_hot_pipe,), name='Hot')
         self.hot_receiver.daemon = True
+        
+        self.log = []
 
         self.cool_receiver.start()
         self.hot_receiver.start()
@@ -92,14 +95,15 @@ class Game:
             self.accept_connection('Hot', self.hot_pipe)
 
         for i in range(self.turn):
+            self.log.append(f'Turn:{self.turn - i}')
             self.cool_items, self.cool_place = self.action(
-                self.cool_items, self.cool_place, self.hot_place, self.cool_pipe, 'Cool')
+                self.cool_items, self.cool_place, self.hot_place, self.cool_pipe, 'Cool', i)
             time.sleep(self.speed / 1000)
             self.hot_items, self.hot_place = self.action(
-                self.hot_items, self.hot_place, self.cool_place, self.hot_pipe, 'Hot')
+                self.hot_items, self.hot_place, self.cool_place, self.hot_pipe, 'Hot', i)
             time.sleep(self.speed / 1000)
 
-        self.game_set('', 0)
+        self.game_set('', 0, self.turn - 1)
 
     def accept_connection(self, cl, pipe):
         if pipe.poll():
@@ -107,7 +111,11 @@ class Game:
                 case 'connect':
                     self.window_pipe.send(cl)
                     self.window_pipe.send('connect')
-                    self.window_pipe.send(pipe.recv())
+                    self.window_pipe.send((c := pipe.recv()))
+                    if cl == 'Hot':
+                        self.hot_name = c
+                    else:
+                        self.cool_name = c
                     self.window_pipe.send(pipe.recv())
                 case 'd':
                     self.window_pipe.send(cl)
@@ -153,26 +161,41 @@ class Game:
         return True
 
     def change_map(self):
-        if self.map_name == 'Blank':
+        if self.map_name[-5:] == 'Blank':
             self.map = [[0 for i in range(15)] for i in range(17)]
             self.hot_place = [8, 9]
             self.cool_place = [6, 7]
             self.turn = 100
         else:
-            with open(self.map_directory + r'/' + self.map_name + '.CHmap', 'r') as f:
+            with open(self.map_name + '.CHmap', 'r') as f:
                 j = json.load(f)
                 self.map = j['Map']
                 self.hot_place = j['Hot']
                 self.cool_place = j['Cool']
                 self.turn = j['Turn']
+        self.log.append('MAP')
+        l = []
+        for i, y in enumerate(self.map):
+            l.append([])
+            for j, x in enumerate(y):
+                if self.cool_place[0] == j and self.cool_place[1] == i:
+                    l[-1].append('C')
+                elif self.hot_place[0] == j and self.hot_place[1] == i:
+                    l[-1].append('H')
+                    
+                else:
+                    l[-1].append(str(x))
+        for i in l:
+            self.log.append(' '.join(i))
 
-    def action(self, item, place: list, enemy_place: list, pipe, cl):
+    def action(self, item, place: list, enemy_place: list, pipe, cl, turn:int):
         pipe.send('t')
         if pipe.recv() != 'ok':
-            self.game_set(cl, 5)
+            self.game_set(cl, 5, turn)
         pipe.send(self.output_square(True, *self.cool_place))
         next_place = place.copy()
         r = pipe.recv()
+        self.log.append(f'{cl} {r}')
 
         self.window_pipe.send('Game')
         self.window_pipe.send(cl)
@@ -181,15 +204,16 @@ class Game:
 
         is_getted_item = False
 
+        c = ''
         match r[0]:
             case 'w':
                 next_place[0] += Game.direction[r[1]][0]
                 next_place[1] += Game.direction[r[1]][1]
                 self.window_pipe.send(next_place)
-                pipe.send(self.output_square(True, *next_place))
+                pipe.send((c := self.output_square(True, *next_place)))
                 match self.in_range(*next_place):
                     case 2:
-                        self.game_set(cl, 4)
+                        self.game_set(cl, 4, turn)
                     case 3:
                         is_getted_item = True
                         item += 1
@@ -207,24 +231,25 @@ class Game:
                 self.cool_place = next_place.copy()
                 if 0 <= place[0] <= 14 and 0 <= place[1] <= 16:
                     self.map[place[1]][place[0]] = 2
-                pipe.send(self.output_square(True, *next_place))
+                pipe.send((c := self.output_square(True, *next_place)))
                 if place == enemy_place:
-                    self.game_set(cl, 1)
+                    self.game_set(cl, 1, turn)
                 elif self.enclosed(*enemy_place):
-                    self.game_set(cl, 2)
+                    self.game_set(cl, 2, turn)
                 elif self.enclosed(*next_place):
-                    self.game_set(cl, 3)
+                    self.game_set(cl, 3, turn)
             case 'l':
-                pipe.send(self.output_square(
-                    False, place[0] + Game.direction[r[1]][0] * 2, place[1] + Game.direction[r[1]][1] * 2))
+                pipe.send((c := self.output_square(
+                    False, place[0] + Game.direction[r[1]][0] * 2, place[1] + Game.direction[r[1]][1] * 2)))
             case 's':
-                pipe.send(self.output_line(
-                    place[0], place[1], *Game.direction[r[1]]))
+                pipe.send((c := self.output_line(
+                    place[0], place[1], *Game.direction[r[1]])))
             case 'C':
-                self.game_set(cl, 5)
+                self.game_set(cl, 5, turn)
+        self.log.append(c)
         return item, next_place
 
-    def game_set(self, cl: str, state: int) -> NoReturn:
+    def game_set(self, cl: str, state: int, turn) -> NoReturn:
         '''
         state
         0: 通常ゲーム終了
@@ -233,29 +258,63 @@ class Game:
         3: clが自分を囲んだ
         4: clがブロックと重なった
         5: clが通信エラー
-        ''''''
+        '''
+        d = {'Cool':0, 'Hot':0}
+        left_turn = self.turn - turn - 1
         match state:
             case 0:
-                print('ゲームが終了しました')
-                print(f'Cool: {self.cool_items}')
-                print(f'Hot: {self.hot_items}')
+                self.log.append('試合が通常終了しました')
             case 1:
-                print(f'{cl}がput勝ちしました')
+                self.log.append(f'{cl}がput勝ちしました')
+                d[cl] = 1
+                d[self.inverse_client(cl)] = -1
             case 2:
-                print(f'{cl}が敵を囲みました')
+                self.log.append(f'{cl}が敵を囲みました')
+                d[cl] = 1
+                d[self.inverse_client(cl)] = -1
             case 3:
-                print(f'{cl}が自分を囲みました')
+                self.log.append(f'{cl}が自分を囲みました')
+                d[cl] = -1
+                d[self.inverse_client(cl)] = 1
             case 4:
-                print(f'{cl}がブロックと重なりました')
+                self.log.append(f'{cl}がブロックと重なりました')
+                d[cl] = -1
+                d[self.inverse_client(cl)] = 1
             case 5:
-                print(f'{cl}が通信エラーしました')
-        '''
+                self.log.append(f'{cl}が通信エラーしました')
+                d[cl] = -1
+                d[self.inverse_client(cl)] = 1
+        
+        self.log.append('ITEM')
+        self.log.append(f'Cool: {self.cool_items}')
+        self.log.append(f'Hot: {self.hot_items}')
+        self.log.append('POINT')
+        self.log.append(f'Cool: {self.cool_items * 3 + d["Cool"] * left_turn}')
+        self.log.append(f'Hot: {self.hot_items * 3 + d["Hot"] * left_turn}')
+        
         self.window_pipe.send('Gameset')
         self.window_pipe.send(cl)
         self.window_pipe.send(state)
+        if self.window_pipe.recv() == 'ok':
+            path = self.window_pipe.recv()
+            serial = 1
+            while os.path.exists(f'{path}/{self.hot_name} VS {self.cool_name}({serial}).txt'):
+                serial += 1
+            with open(f'{path}/{self.hot_name} VS {self.cool_name}({serial}).txt', mode='w', encoding='utf-8') as f:
+                for i in self.log:
+                    f.write(i + '\n')
         self.cool_disconnect()
         self.hot_disconnect()
         exit()
+    
+    def inverse_client(self, cl) -> str:
+        '''
+        cl と 反対のクライアントを返す
+        '''
+        if cl == 'Hot':
+            return 'Cool'
+        else:
+            return 'Hot'
 
     def cool_connect(self):
         if self.cool_name == '':

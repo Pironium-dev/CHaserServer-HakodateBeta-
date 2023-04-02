@@ -41,6 +41,7 @@ class Game_Window(tk.Frame):
 
         self.points = {'Cool': 0, 'Hot': 0}
         self.labels = {}  # ゲームのポイントのラベルをまとめたもの
+        self.names = {'Cool': '', 'Hot' :()}
 
         # big_flame
         self.big_flame_menu = ttk.Frame()
@@ -116,7 +117,7 @@ class Game_Window(tk.Frame):
         self.label_turn = ttk.Label(
             self.game_frame_status, textvariable=self.var_turn, font=self.font_normal)
         self.progressbar = ttk.Progressbar(
-            self.game_frame_status, maximum=100, length=220, variable=self.var_prog_turn)
+            self.game_frame_status, length=220, variable=self.var_prog_turn)
         self.label_winner = ttk.Label(
             self.game_frame_status, textvariable=self.var_winner, font=(('MSゴシック', '30')))
 
@@ -352,11 +353,11 @@ class Game_Window(tk.Frame):
         self.menu_combobox['values'] = l
 
     def cool_stay(self, _=None):
-        if self.menu_mode_ver_cool.get() == 'Stay' and self.cool_state == 0:
+        if self.menu_mode_ver_cool.get() != 'User' and self.cool_state == 0:
             self.cool_wait()
 
     def hot_stay(self, _=None):
-        if self.menu_mode_ver_hot.get() == 'Stay' and self.hot_state == 0:
+        if self.menu_mode_ver_hot.get() != 'User' and self.hot_state == 0:
             self.hot_wait()
 
     def cool_wait(self):
@@ -409,7 +410,7 @@ class Game_Window(tk.Frame):
             self.has_game_started = True
 
             self.pipe.send('start')
-            self.pipe.send(self.menu_map_ver.get())
+            self.pipe.send(config.d['StagePath'] + r'/' + self.menu_map_ver.get())
             self.pipe.send(int(self.menu_settings_timeout_ver.get()))
             self.pipe.send(int(self.menu_settings_speed_ver.get()))
 
@@ -427,7 +428,8 @@ class Game_Window(tk.Frame):
                             self.cool_state = 2
                             self.menu_button_cool['text'] = '切断'
                             self.menu_label_ver_cool.set(
-                                f'名前:{self.pipe.recv()}\nIP:{self.pipe.recv()}')
+                                f'名前:{(c := self.pipe.recv())}\nIP:{self.pipe.recv()}')
+                            self.names['Cool'] = c
                         else:
                             self.cool_state = 0
                             self.menu_button_cool['text'] = '待機開始'
@@ -439,7 +441,8 @@ class Game_Window(tk.Frame):
                             self.hot_state = 2
                             self.menu_button_hot['text'] = '切断'
                             self.menu_label_ver_hot.set(
-                                f'名前:{self.pipe.recv()}\nIP:{self.pipe.recv()}')
+                                f'名前:{(c := self.pipe.recv())}\nIP:{self.pipe.recv()}')
+                            self.names['Hot'] = c
                         else:
                             self.hot_state = 0
                             self.menu_button_hot['text'] = '待機開始'
@@ -505,6 +508,7 @@ class Game_Window(tk.Frame):
                 hot = j['Hot']
                 cool = j['Cool']
                 self.whole_turn = j['Turn']
+                self.progressbar['maximum'] = self.whole_turn
         except FileNotFoundError:
             if self.menu_map_ver.get() == 'Blank':
                 game_map = [[0 for i in range(15)] for i in range(17)]
@@ -577,6 +581,11 @@ class Game_Window(tk.Frame):
                 cl = self.inverse_client(cl)
                 self.labels[cl].set(
                     f'Score:{self.points[cl] * 3 + (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
+        if self.menu_settings_ver_log.get():
+            self.pipe.send('ok')
+            self.pipe.send(config.d['LogPath'])
+        else:
+            self.pipe.send('no')
 
 if __name__ == '__main__':
     config = ReadConfig()
