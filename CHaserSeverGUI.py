@@ -408,6 +408,9 @@ class Game_Window(tk.Frame):
             self.save_config(False)
             self.big_flame_game.tkraise()
             self.has_game_started = True
+            
+            self.label_cool_name['text'] = self.names['Cool']
+            self.label_hot_name['text'] = self.names['Hot']
 
             self.pipe.send('start')
             self.pipe.send(config.d['StagePath'] + r'/' + self.menu_map_ver.get())
@@ -537,7 +540,7 @@ class Game_Window(tk.Frame):
         cl = self.pipe.recv()
         self.var_turn.set(
             f'Turn:{self.whole_turn - self.var_prog_turn.get()}')
-        self.var_prog_turn.set(self.var_prog_turn.get() - 1)
+        turn = (self.whole_turn - self.var_prog_turn.get() - 1)
         match self.pipe.recv():  # ChaserServer.py game_setを参照してください
             case 0:
                 if self.points['Cool'] == self.points['Hot']:
@@ -549,38 +552,38 @@ class Game_Window(tk.Frame):
             case 1:
                 self.var_winner.set(f'{cl} WIN')
                 self.labels[cl].set(
-                    f'Score:{self.points[cl] * 3 + (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
+                    f'Score:{self.points[cl] * 3 + turn}(Item:{self.points[cl]})')
                 cl = self.inverse_client(cl)
                 self.labels[cl].set(
-                    f'Score:{self.points[cl] * 3 - (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
+                    f'Score:{self.points[cl] * 3 - turn}(Item:{self.points[cl]})')
             case 2:
                 self.var_winner.set(f'{cl} WIN')
                 self.labels[cl].set(
-                    f'Score:{self.points[cl] * 3 + (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
+                    f'Score:{self.points[cl] * 3 + turn}(Item:{self.points[cl]})')
                 cl = self.inverse_client(cl)
                 self.labels[cl].set(
-                    f'Score:{self.points[cl] * 3 - (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
+                    f'Score:{self.points[cl] * 3 - turn}(Item:{self.points[cl]})')
             case 3:
                 self.var_winner.set(f'{cl} LOSE')
                 self.labels[cl].set(
-                    f'Score:{self.points[cl] * 3 - (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
+                    f'Score:{self.points[cl] * 3 - turn}(Item:{self.points[cl]})')
                 cl = self.inverse_client(cl)
                 self.labels[cl].set(
-                    f'Score:{self.points[cl] * 3 + (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
+                    f'Score:{self.points[cl] * 3 + turn}(Item:{self.points[cl]})')
             case 4:
                 self.var_winner.set(f'{cl} LOSE')
                 self.labels[cl].set(
-                    f'Score:{self.points[cl] * 3 - (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
+                    f'Score:{self.points[cl] * 3 - turn}(Item:{self.points[cl]})')
                 cl = self.inverse_client(cl)
                 self.labels[cl].set(
-                    f'Score:{self.points[cl] * 3 + (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
+                    f'Score:{self.points[cl] * 3 + turn}(Item:{self.points[cl]})')
             case 5:
                 self.var_winner.set(f'{cl} LOSE')
                 self.labels[cl].set(
-                    f'Score:{self.points[cl] * 3 - (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
+                    f'Score:{self.points[cl] * 3 - turn}(Item:{self.points[cl]})')
                 cl = self.inverse_client(cl)
                 self.labels[cl].set(
-                    f'Score:{self.points[cl] * 3 + (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
+                    f'Score:{self.points[cl] * 3 + turn}(Item:{self.points[cl]})')
         if self.menu_settings_ver_log.get():
             self.pipe.send('ok')
             self.pipe.send(config.d['LogPath'])
