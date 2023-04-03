@@ -8,7 +8,7 @@ import ReadConfig
 class change_config(tk.Frame):
     def __init__(self, master):
         self.CONFIG = ReadConfig.ReadConfig()
-        self.game_config = self.CONFIG.output_config()
+        self.game_config = self.CONFIG.d
         self.stage_names = []
         
         tk.Frame.__init__(self, master=master)
@@ -46,8 +46,8 @@ class change_config(tk.Frame):
         
         self.speed_entry = tk.Entry(self.game_frame, width = 5)
         self.speed_entry.insert(0, str(self.game_config['GameSpeed']))
-        self.bot_mode_combobox = ttk.Combobox(self.game_frame, values=['Off', 'Stay', 'Bot'], state='readonly')
-        self.bot_mode_combobox.set(str(self.game_config['AntiBotMode']))
+        self.bot_mode_combobox = ttk.Combobox(self.game_frame, values=['User', 'Stay', 'Bot'], state='readonly')
+        self.bot_mode_combobox.set(str(self.game_config['CoolMode']))
         self.stage_combobox = ttk.Combobox(self.game_frame, state='readonly')
         self.stage_combobox.set(self.game_config['NextStage'])
         
@@ -87,7 +87,7 @@ class change_config(tk.Frame):
         self.game_config['LogPath'] = self.log_path
         self.game_config['StagePath'] = self.stage_path
         self.game_config['NextStage'] = self.stage_combobox.get()
-        self.CONFIG.save(self.game_config)
+        self.CONFIG.save()
         self.master.destroy()
     
     def log_changed(self):
