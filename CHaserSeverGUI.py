@@ -15,8 +15,6 @@ from ReadConfig import ReadConfig
 from CHaserServer import Game
 
 '''
-ログ保存
-メニューのマップ表示
 マップ制作
 '''
 
@@ -27,6 +25,8 @@ Bot
 ファイル場所
 マップ場所
 設定保存
+ログ保存
+メニューのマップ表示
 '''
 
 
@@ -49,6 +49,8 @@ class Game_Window(tk.Frame):
 
         self.game_screen()
         self.menu_screen()
+        
+        self.write_menu_map(None)
 
         self.big_flame_menu.grid(row=0, column=0, sticky=tk.NSEW)
 
@@ -195,6 +197,12 @@ class Game_Window(tk.Frame):
         self.menu_port_ver_hot.set(config.d['HotPort'])
         self.menu_mode_ver_hot.set(config.d['HotMode'])
 
+        #picture
+        self.swall_image = ImageTk.PhotoImage(file='./画像/Swall.png')
+        self.sitem_image = ImageTk.PhotoImage(file='./画像/Sitem.png')
+        self.shot_image = ImageTk.PhotoImage(file='./画像/SHot.png')
+        self.scool_image = ImageTk.PhotoImage(file='./画像/SCool.png')
+
         # map_view
         size = 18
         self.menu_canvas = tk.Canvas(
@@ -207,6 +215,7 @@ class Game_Window(tk.Frame):
 
         self.menu_combobox = ttk.Combobox(
             self.menu_frame_map_select, textvariable=self.menu_map_ver, state='readonly')
+        self.menu_combobox.bind('<<ComboboxSelected>>', self.write_menu_map)
         self.menu_map_randomize = ttk.Button(
             self.menu_frame_map_select, text='ランダム', command=self.map_randmize)
         self.menu_combobox.grid(row=0, column=0, pady=5)
@@ -504,6 +513,45 @@ class Game_Window(tk.Frame):
 
         self.game_screen_id = [[-1 for i in range(15)] for i in range(17)]
 
+        game_map, hot, cool = self.read_map()
+        for i, x in enumerate(game_map):
+            for j, y in enumerate(x):
+                if hot == [j, i]:
+                    self.game_canvas.create_image(
+                        15 + j * 25, 15 + i * 25, image=self.hot_image, tag='Hot')
+                if cool == [j, i]:
+                    self.game_canvas.create_image(
+                        15 + j * 25, 15 + i * 25, image=self.cool_image, tag='Cool')
+                match y:
+                    case 2:
+                        self.game_canvas.create_image(
+                            15 + j * 25, 15 + i * 25, image=self.wall_image)
+                    case 3:
+                        self.game_screen_id[i][j] = self.game_canvas.create_image(
+                            15 + j * 25, 15 + i * 25, image=self.item_image)
+
+    def write_menu_map(self, _):
+        game_map, hot, cool = self.read_map()
+        padding = 10
+        size = 18
+        self.menu_canvas.delete('a')
+        for i, x in enumerate(game_map):
+            for j, y in enumerate(x):
+                if hot == [j, i]:
+                    self.menu_canvas.create_image(
+                        padding + j * size, padding + i * size, image=self.shot_image, tag='a')
+                if cool == [j, i]:
+                    self.menu_canvas.create_image(
+                        padding + j * size, padding + i * size, image=self.scool_image, tag='a')
+                match y:
+                    case 2:
+                        self.menu_canvas.create_image(
+                            padding + j * size, padding + i * size, image=self.swall_image, tag='a')
+                    case 3:
+                        self.menu_canvas.create_image(
+                            padding + j * size, padding + i * size, image=self.sitem_image, tag='a')
+    
+    def read_map(self):
         try:
             with open(config.d['StagePath'] + r'/' + self.menu_map_ver.get() + '.CHmap', 'r') as f:
                 j = json.load(f)
@@ -520,21 +568,7 @@ class Game_Window(tk.Frame):
                 self.whole_turn = 100
             else:
                 raise FileNotFoundError
-        for i, x in enumerate(game_map):
-            for j, y in enumerate(x):
-                if hot == [j, i]:
-                    self.game_canvas.create_image(
-                        15 + j * 25, 15 + i * 25, image=self.hot_image, tag='Hot')
-                if cool == [j, i]:
-                    self.game_canvas.create_image(
-                        15 + j * 25, 15 + i * 25, image=self.cool_image, tag='Cool')
-                match y:
-                    case 2:
-                        self.game_canvas.create_image(
-                            15 + j * 25, 15 + i * 25, image=self.wall_image)
-                    case 3:
-                        self.game_screen_id[i][j] = self.game_canvas.create_image(
-                            15 + j * 25, 15 + i * 25, image=self.item_image)
+        return game_map, hot, cool
 
     def game_set(self):
         cl = self.pipe.recv()
