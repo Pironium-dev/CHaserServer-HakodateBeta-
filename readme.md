@@ -14,7 +14,7 @@ Pillowは、Pythonインストール後、以下を実行してください
 pip install Pillow
 ```
 
-[ダウンロードリンク](https://github.com/piroping/CHaserServer-HakodateBeta-/releases)  
+[ダウンロードリンク](https://github.com/piroping/CHaserServer-HakodateBeta-/releases/download/release/HakodateCHaserBeta.zip)
 
 ## 使い方
 
