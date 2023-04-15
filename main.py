@@ -31,7 +31,7 @@ class Game_Window(tk.Frame):
         self.condition = threading.Condition()
 
         tk.Frame.__init__(self, master=master)
-        master.title('MainWindow')
+        master.title('CHaser')
         master.protocol('WM_DELETE_WINDOW', self.save_config)
 
         self.points = {'Cool': 0, 'Hot': 0}
@@ -338,6 +338,8 @@ class Game_Window(tk.Frame):
         self.menu_cool_combobox.set(config.d['CoolMode'])
         self.menu_map_ver.set(config.d['NextMap'])
         self.menu_settings_ver_log.set(config.d['Log'])
+        
+        self.write_menu_map(None)
 
     def change_log(self):
         if (c := filedialog.askdirectory(initialdir=__file__)) != '':
