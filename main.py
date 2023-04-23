@@ -105,11 +105,13 @@ class Game_Window(tk.Frame):
         # status
         self.var_turn = tk.StringVar()
         self.var_winner = tk.StringVar()
+        self.var_reason = tk.StringVar()
         self.var_prog_turn = tk.IntVar()
 
         self.var_prog_turn.set(0)
         self.var_turn.set('Turn:100')
         self.var_winner.set('')
+        self.var_reason.set('')
 
         self.label_turn = ttk.Label(
             self.game_frame_status, textvariable=self.var_turn, font=self.font_normal)
@@ -117,10 +119,13 @@ class Game_Window(tk.Frame):
             self.game_frame_status, length=220, variable=self.var_prog_turn)
         self.label_winner = ttk.Label(
             self.game_frame_status, textvariable=self.var_winner, font=(('MSゴシック', '30')))
+        self.label_reason = ttk.Label(
+            self.game_frame_status, textvariable=self.var_reason, font=(('MSゴシック', '20')))
 
         self.label_turn.pack()
         self.progressbar.pack()
         self.label_winner.pack()
+        self.label_reason.pack()
 
         # Cool
 
@@ -582,7 +587,7 @@ class Game_Window(tk.Frame):
         self.var_turn.set(
             f'Turn:{self.whole_turn - self.var_prog_turn.get()}')
         turn = (self.whole_turn - self.var_prog_turn.get() - 1)
-        match self.pipe.recv():  # ChaserServer.py game_setを参照してください
+        match self.pipe.recv():  # Game.game_setを参照してください
             case 0:
                 if self.points['Cool'] == self.points['Hot']:
                     self.var_winner.set('DRAW')
@@ -593,18 +598,23 @@ class Game_Window(tk.Frame):
             case 1:
                 self.var_winner.set(f'{cl} WIN')
                 self.point_set(turn, cl)
+                self.var_reason.set('put勝ち')
             case 2:
                 self.var_winner.set(f'{cl} WIN')
                 self.point_set(turn, cl)
+                self.var_reason.set('put勝ち(囲み)')
             case 3:
                 self.var_winner.set(f'{cl} LOSE')
                 self.point_set(turn, self.inverse_client(cl))
+                self.var_reason.set('自滅負け(囲み)')
             case 4:
                 self.var_winner.set(f'{cl} LOSE')
                 self.point_set(turn, self.inverse_client(cl))
+                self.var_reason.set('自滅負け')
             case 5:
                 self.var_winner.set(f'{cl} LOSE')
                 self.point_set(turn, self.inverse_client(cl))
+                self.var_reason.set('通信エラー')
         if self.menu_settings_ver_log.get():
             self.pipe.send('ok')
             self.pipe.send(config.d['LogPath'])
