@@ -125,7 +125,7 @@ class Game_Window(tk.Frame):
         # Cool
 
         self.labels['Cool'] = tk.StringVar()
-        self.labels['Cool'].set('Score:0(Item:0)')
+        self.labels['Cool'].set('Item:0(Score:0)')
 
         self.label_cool_name = ttk.Label(
             self.game_frame_cool, text='自動君', font=self.font_normal)
@@ -138,7 +138,8 @@ class Game_Window(tk.Frame):
         # Hot
 
         self.labels['Hot'] = tk.StringVar()
-        self.labels['Hot'].set('Score:0(Item:0)')
+        self.labels['Hot'].set('Item:0(Score:0)')
+
 
         self.label_hot_name = ttk.Label(
             self.game_frame_hot, text='自動君', font=self.font_normal)
@@ -166,6 +167,9 @@ class Game_Window(tk.Frame):
         # ver
         self.menu_settings_ver_log = tk.BooleanVar()
         self.menu_settings_ver_log.set(config.d['Log'])
+        
+        self.menu_settings_ver_score = tk.BooleanVar()
+        self.menu_settings_ver_score.set(config.d['Score'])
 
         self.menu_settings_timeout_ver = tk.Variable()
         self.menu_settings_timeout_ver.set(config.d['TimeOut'])
@@ -239,6 +243,9 @@ class Game_Window(tk.Frame):
 
         self.menu_settings_box_log = ttk.Checkbutton(
             self.menu_frame_settings, text='ログ保存', variable=self.menu_settings_ver_log)
+        
+        self.menu_settings_box_score = ttk.Checkbutton(
+            self.menu_frame_settings, text='スコア', variable=self.menu_settings_ver_score)
 
         self.menu_settings_label_timeout = ttk.Label(
             self.menu_frame_settings, text='タイムアウト(ms)', font=self.font)
@@ -267,7 +274,8 @@ class Game_Window(tk.Frame):
             self.menu_frame_settings, text='設定のリセット', command=self.reset_config)
         self.menu_settings_button_reset.grid(row=4, column=0, columnspan=2)
 
-        self.menu_settings_box_log.grid(row=0, column=0, columnspan=2)
+        self.menu_settings_box_log.grid(row=0, column=0)
+        self.menu_settings_box_score.grid(row=0, column=1)
         self.menu_settings_label_timeout.grid(row=1, column=0)
         self.menu_settings_spinbox_timeout.grid(row=2, column=0)
         self.menu_settings_label_speed.grid(row=1, column=1)
@@ -322,6 +330,7 @@ class Game_Window(tk.Frame):
         config.d['CoolMode'] = self.menu_cool_combobox.get()
         config.d['NextMap'] = self.menu_map_ver.get()
         config.d['Log'] = self.menu_settings_ver_log.get()
+        config.d['Score'] = self.menu_settings_ver_score.get()
         config.save()
         if flag:
             self.master.destroy()
@@ -338,6 +347,7 @@ class Game_Window(tk.Frame):
         self.menu_cool_combobox.set(config.d['CoolMode'])
         self.menu_map_ver.set(config.d['NextMap'])
         self.menu_settings_ver_log.set(config.d['Log'])
+        self.menu_settings_ver_score.set(config.d['Score'])
         
         self.write_menu_map(None)
 
@@ -482,13 +492,12 @@ class Game_Window(tk.Frame):
                                     self.game_canvas.create_image(
                                         15 + i * 25, 15 + j * 25, image=self.wall_image)
 
-                            self.labels[cl].set(
-                                f'Score:{self.points[cl] * 3 + (self.whole_turn - self.var_prog_turn.get() - 1)}(Item:{self.points[cl]})')
                             if cl == 'Hot':
                                 self.var_prog_turn.set(
                                     self.var_prog_turn.get() + 1)
                                 self.var_turn.set(
                                     f'Turn:{self.whole_turn - self.var_prog_turn.get()}')
+                                self.point_set(self.whole_turn - self.var_prog_turn.get())
                         else:
                             self.game_set()
 
@@ -583,44 +592,54 @@ class Game_Window(tk.Frame):
                     self.var_winner.set('Hot WIN')
             case 1:
                 self.var_winner.set(f'{cl} WIN')
-                self.labels[cl].set(
-                    f'Score:{self.points[cl] * 3 + turn}(Item:{self.points[cl]})')
-                cl = self.inverse_client(cl)
-                self.labels[cl].set(
-                    f'Score:{self.points[cl] * 3 - turn}(Item:{self.points[cl]})')
+                self.point_set(turn, cl)
             case 2:
                 self.var_winner.set(f'{cl} WIN')
-                self.labels[cl].set(
-                    f'Score:{self.points[cl] * 3 + turn}(Item:{self.points[cl]})')
-                cl = self.inverse_client(cl)
-                self.labels[cl].set(
-                    f'Score:{self.points[cl] * 3 - turn}(Item:{self.points[cl]})')
+                self.point_set(turn, cl)
             case 3:
                 self.var_winner.set(f'{cl} LOSE')
-                self.labels[cl].set(
-                    f'Score:{self.points[cl] * 3 - turn}(Item:{self.points[cl]})')
-                cl = self.inverse_client(cl)
-                self.labels[cl].set(
-                    f'Score:{self.points[cl] * 3 + turn}(Item:{self.points[cl]})')
+                self.point_set(turn, self.inverse_client(cl))
             case 4:
                 self.var_winner.set(f'{cl} LOSE')
-                self.labels[cl].set(
-                    f'Score:{self.points[cl] * 3 - turn}(Item:{self.points[cl]})')
-                cl = self.inverse_client(cl)
-                self.labels[cl].set(
-                    f'Score:{self.points[cl] * 3 + turn}(Item:{self.points[cl]})')
+                self.point_set(turn, self.inverse_client(cl))
             case 5:
                 self.var_winner.set(f'{cl} LOSE')
-                self.labels[cl].set(
-                    f'Score:{self.points[cl] * 3 - turn}(Item:{self.points[cl]})')
-                cl = self.inverse_client(cl)
-                self.labels[cl].set(
-                    f'Score:{self.points[cl] * 3 + turn}(Item:{self.points[cl]})')
+                self.point_set(turn, self.inverse_client(cl))
         if self.menu_settings_ver_log.get():
             self.pipe.send('ok')
             self.pipe.send(config.d['LogPath'])
         else:
             self.pipe.send('no')
+    
+    def point_set(self, turn, cl=None):
+        if self.menu_settings_ver_score.get():
+            if cl is not None:
+                self.labels[cl].set(
+                    f'Item:{self.points[cl]}(Score:{self.points[cl] * 3 + turn})')
+                cl = self.inverse_client(cl)
+                self.labels[cl].set(
+                    f'Item:{self.points[cl]}(Score:{self.points[cl] * 3 - turn})')
+            else:
+                c = 'Cool'
+                h = 'Hot'
+                self.labels[c].set(
+                    f'Item:{self.points[c]}(Score:{self.points[c] * 3 + turn})')
+                self.labels[h].set(
+                    f'Item:{self.points[h]}(Score:{self.points[h] * 3 + turn})')
+        else:
+            if cl is not None:
+                self.labels[cl].set(
+                    f'Item:{self.points[cl]}')
+                cl = self.inverse_client(cl)
+                self.labels[cl].set(
+                    f'Item:{self.points[cl]}')
+            else:
+                c = 'Cool'
+                h = 'Hot'
+                self.labels[c].set(
+                    f'Item:{self.points[c]}')
+                self.labels[h].set(
+                    f'Item:{self.points[h]}')
 
 
 class ReadConfig:
