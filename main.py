@@ -26,23 +26,28 @@ Bot
 
 
 class Game_Window(tk.Frame):
-    def __init__(self, master: tk.Tk, pipe):
-        self.pipe = pipe
+    def __init__(self, master: tk.Tk):
+        self.game_pipe, self.pipe = multiprocessing.Pipe()
         self.condition = threading.Condition()
-
+        
+        self.game = multiprocessing.Process(
+            target=Game, name='Server', args=(self.game_pipe,), daemon=True)
+        self.game.start()
+        
+        self.is_game_started = False
+        
+        
         tk.Frame.__init__(self, master=master)
         master.title('CHaser')
         master.protocol('WM_DELETE_WINDOW', self.save_config)
 
         self.points = {'Cool': 0, 'Hot': 0}
         self.labels = {}  # ゲームのポイントのラベルをまとめたもの
-        self.names = {'Cool': '', 'Hot': ()}
+        self.names = {'Cool': '', 'Hot': ''}
 
         # big_flame
         self.big_flame_menu = ttk.Frame()
-        self.big_flame_game = ttk.Frame()
 
-        self.game_screen()
         self.menu_screen()
 
         self.write_menu_map(None)
@@ -58,7 +63,6 @@ class Game_Window(tk.Frame):
         '''
 
         self.has_game_started = False
-        # self.__after()
         self.receive = threading.Thread(target=self.pipe_receive)
         self.receive.daemon = True
         self.receive.start()
@@ -68,6 +72,13 @@ class Game_Window(tk.Frame):
         self.pipe.send('shutdown')
 
     def game_screen(self):
+        # window
+        self.game_window = tk.Toplevel()
+        self.game_window.title('game')
+        self.game_window.protocol('WM_DELETE_WINDOW', lambda: None)
+    
+        self.big_flame_game = ttk.Frame(self.game_window)
+
         # frame
         self.game_frame_status = ttk.Frame(self.big_flame_game)
         self.game_frame_cool = ttk.Labelframe(self.big_flame_game, text='Cool')
@@ -161,7 +172,7 @@ class Game_Window(tk.Frame):
         self.game_frame_cool.grid(column=2, row=1, padx=6)
         self.game_frame_hot.grid(column=2, row=2, padx=6)
 
-        self.big_flame_game.grid(row=0, column=0, sticky=tk.NSEW)
+        self.big_flame_game.pack()
 
     def menu_screen(self):
         # tk_setting
@@ -425,19 +436,38 @@ class Game_Window(tk.Frame):
 
     def start_game(self):
         if self.cool_state == self.hot_state == 2:
-            self.write_map()
-            self.save_config(False)
-            self.big_flame_game.tkraise()
-            self.has_game_started = True
+            if not self.is_game_started:
+                self.menu_game_start['text'] = 'ゲーム停止'
+                
+                self.is_game_started = True
+                self.game_screen()
+                self.write_map()
+                self.save_config(False)
+                self.big_flame_game.tkraise()
+                self.has_game_started = True
 
-            self.label_cool_name['text'] = self.names['Cool']
-            self.label_hot_name['text'] = self.names['Hot']
+                self.label_cool_name['text'] = self.names['Cool']
+                self.label_hot_name['text'] = self.names['Hot']
 
-            self.pipe.send('start')
-            self.pipe.send(config.d['StagePath'] +
-                           r'/' + self.menu_map_ver.get())
-            self.pipe.send(int(self.menu_settings_timeout_ver.get()))
-            self.pipe.send(int(self.menu_settings_speed_ver.get()))
+                self.pipe.send('start')
+                self.pipe.send(config.d['StagePath'] +
+                            r'/' + self.menu_map_ver.get())
+                self.pipe.send(int(self.menu_settings_timeout_ver.get()))
+                self.pipe.send(int(self.menu_settings_speed_ver.get()))
+            else:
+                self.menu_game_start['text'] = 'ゲーム開始'
+                self.menu_game_start['state'] = 'disable'
+                
+                self.is_game_started = False
+                if self.game.is_alive():
+                    self.game.terminate()
+                self.game = multiprocessing.Process(
+                    target=Game, name='Server', args=(self.game_pipe,), daemon=True)
+                self.game.start()
+                self.cool_disconnect()
+                self.hot_disconnect()
+                
+                self.game_window.destroy()
 
     def pipe_receive(self):
         while True:
@@ -447,68 +477,71 @@ class Game_Window(tk.Frame):
                 self.menu_game_start['state'] = 'disable'
 
             with self.condition:
-                match self.pipe.recv():
-                    case 'Cool':
-                        if self.pipe.recv() == 'connect':
-                            self.cool_state = 2
-                            self.menu_button_cool['text'] = '切断'
-                            self.menu_label_ver_cool.set(
-                                f'名前:{(c := self.pipe.recv())}\nIP:{self.pipe.recv()}')
-                            self.names['Cool'] = c
-                        else:
-                            self.cool_state = 0
-                            self.menu_button_cool['text'] = '待機開始'
-                            self.menu_cool_combobox['state'] = 'readonly'
-                            self.menu_cool_spinbox['state'] = 'normal'
-                            self.menu_label_ver_cool.set('名前:\nIP:')
-                    case 'Hot':
-                        if self.pipe.recv() == 'connect':
-                            self.hot_state = 2
-                            self.menu_button_hot['text'] = '切断'
-                            self.menu_label_ver_hot.set(
-                                f'名前:{(c := self.pipe.recv())}\nIP:{self.pipe.recv()}')
-                            self.names['Hot'] = c
-                        else:
-                            self.hot_state = 0
-                            self.menu_button_hot['text'] = '待機開始'
-                            self.menu_hot_combobox['state'] = 'readonly'
-                            self.menu_hot_spinbox['state'] = 'normal'
-                            self.menu_label_ver_hot.set('名前:\nIP:')
-                    case 'Game':
-                        # アニメーション入れる
-                        cl = self.pipe.recv()
-                        if cl != 'gameset':
-                            nowpos = self.pipe.recv()
-                            match self.pipe.recv():
-                                case 'w':
-                                    i, j = self.pipe.recv()
-                                    self.game_canvas.moveto(
-                                        cl, i * 25 + 3, j * 25 + 3)
-                                    if (c := self.pipe.recv()) == 'i':
+                try:
+                    match self.pipe.recv():
+                        case 'Cool':
+                            if self.pipe.recv() == 'connect':
+                                self.cool_state = 2
+                                self.menu_button_cool['text'] = '切断'
+                                self.menu_label_ver_cool.set(
+                                    f'名前:{(c := self.pipe.recv())}\nIP:{self.pipe.recv()}')
+                                self.names['Cool'] = c
+                            else:
+                                self.cool_state = 0
+                                self.menu_button_cool['text'] = '待機開始'
+                                self.menu_cool_combobox['state'] = 'readonly'
+                                self.menu_cool_spinbox['state'] = 'normal'
+                                self.menu_label_ver_cool.set('名前:\nIP:')
+                        case 'Hot':
+                            if self.pipe.recv() == 'connect':
+                                self.hot_state = 2
+                                self.menu_button_hot['text'] = '切断'
+                                self.menu_label_ver_hot.set(
+                                    f'名前:{(c := self.pipe.recv())}\nIP:{self.pipe.recv()}')
+                                self.names['Hot'] = c
+                            else:
+                                self.hot_state = 0
+                                self.menu_button_hot['text'] = '待機開始'
+                                self.menu_hot_combobox['state'] = 'readonly'
+                                self.menu_hot_spinbox['state'] = 'normal'
+                                self.menu_label_ver_hot.set('名前:\nIP:')
+                        case 'Game':
+                            # アニメーション入れる
+                            cl = self.pipe.recv()
+                            if cl != 'gameset':
+                                nowpos = self.pipe.recv()
+                                match self.pipe.recv():
+                                    case 'w':
+                                        i, j = self.pipe.recv()
+                                        self.game_canvas.moveto(
+                                            cl, i * 25 + 3, j * 25 + 3)
+                                        if (c := self.pipe.recv()) == 'i':
+                                            self.game_canvas.create_image(
+                                                15 + nowpos[0] * 25, 15 + nowpos[1] * 25, image=self.wall_image)
+                                            self.game_canvas.delete(
+                                                self.game_screen_id[j][i])
+                                            self.points[cl] += 1
+                                        elif c == 'Gameset':
+                                            self.game_set()
+                                    case 'p':
+                                        i, j = self.pipe.recv()
                                         self.game_canvas.create_image(
-                                            15 + nowpos[0] * 25, 15 + nowpos[1] * 25, image=self.wall_image)
-                                        self.game_canvas.delete(
-                                            self.game_screen_id[j][i])
-                                        self.points[cl] += 1
-                                    elif c == 'Gameset':
-                                        self.game_set()
-                                case 'p':
-                                    i, j = self.pipe.recv()
-                                    self.game_canvas.create_image(
-                                        15 + i * 25, 15 + j * 25, image=self.wall_image)
+                                            15 + i * 25, 15 + j * 25, image=self.wall_image)
 
-                            if cl == 'Hot':
-                                self.var_prog_turn.set(
-                                    self.var_prog_turn.get() + 1)
-                                self.var_turn.set(
-                                    f'Turn:{self.whole_turn - self.var_prog_turn.get()}')
-                                self.point_set(self.whole_turn - self.var_prog_turn.get())
-                        else:
+                                if cl == 'Hot':
+                                    self.var_prog_turn.set(
+                                        self.var_prog_turn.get() + 1)
+                                    self.var_turn.set(
+                                        f'Turn:{self.whole_turn - self.var_prog_turn.get()}')
+                                    self.point_set(self.whole_turn - self.var_prog_turn.get())
+                            else:
+                                self.game_set()
+
+                        case 'Gameset':
                             self.game_set()
-
-                    case 'Gameset':
-                        self.game_set()
-
+                except EOFError:
+                    exit()
+    
     def inverse_client(self, cl) -> str:
         '''
         cl と 反対のクライアントを返す
@@ -1135,15 +1168,9 @@ class Receiver:
 if __name__ == '__main__':
     config = ReadConfig()
 
-    game_pipe, window_pipe = multiprocessing.Pipe()
-
-    game = multiprocessing.Process(
-        target=Game, name='Server', args=(game_pipe,), daemon=True)
-    game.start()
-
     root = tk.Tk()
     root.geometry('680x450')
     root.resizable(False, False)
-    game_window = Game_Window(root, window_pipe)
+    game_window = Game_Window(root)
 
     game_window.mainloop()
