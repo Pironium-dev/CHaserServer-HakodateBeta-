@@ -75,7 +75,7 @@ class Game_Window(tk.Frame):
         # window
         self.game_window = tk.Toplevel()
         self.game_window.title('game')
-        self.game_window.protocol('WM_DELETE_WINDOW', lambda: None)
+        self.game_window.protocol('WM_DELETE_WINDOW', self.start_game)
     
         self.big_flame_game = ttk.Frame(self.game_window)
 
@@ -197,7 +197,7 @@ class Game_Window(tk.Frame):
         self.menu_map_ver.set(config.d['NextMap'])
 
         # Cool
-        self.menu_frame_cool, self.menu_label_ver_cool, self.menu_port_ver_cool, self.menu_mode_ver_cool, self.menu_button_cool, self.menu_cool_spinbox,  self.menu_cool_combobox = self.cliants_menu(
+        self.menu_frame_cool, self.menu_label_ver_cool, self.menu_port_ver_cool, self.menu_mode_ver_cool, self.menu_button_cool, self.menu_cool_spinbox,  self.menu_cool_combobox = self.clients_menu(
             'COOL')
         self.menu_button_cool['command'] = self.cool_wait
         self.menu_cool_combobox.bind('<<ComboboxSelected>>', self.cool_stay)
@@ -205,7 +205,7 @@ class Game_Window(tk.Frame):
         self.menu_mode_ver_cool.set(config.d['CoolMode'])
 
         # Hot
-        self.menu_frame_hot, self.menu_label_ver_hot, self.menu_port_ver_hot, self.menu_mode_ver_hot, self.menu_button_hot, self.menu_hot_spinbox,  self.menu_hot_combobox = self.cliants_menu(
+        self.menu_frame_hot, self.menu_label_ver_hot, self.menu_port_ver_hot, self.menu_mode_ver_hot, self.menu_button_hot, self.menu_hot_spinbox,  self.menu_hot_combobox = self.clients_menu(
             'HOT')
         self.menu_button_hot['command'] = self.hot_wait
         self.menu_hot_combobox.bind('<<ComboboxSelected>>', self.hot_stay)
@@ -232,11 +232,11 @@ class Game_Window(tk.Frame):
             self.menu_frame_map_select, textvariable=self.menu_map_ver, state='readonly')
         self.menu_combobox.bind('<<ComboboxSelected>>', self.write_menu_map)
         self.menu_map_randomize = ttk.Button(
-            self.menu_frame_map_select, text='ランダム', command=self.map_randmize)
+            self.menu_frame_map_select, text='ランダム', command=self.map_randomize)
         self.menu_combobox.grid(row=0, column=0, pady=5)
         self.menu_map_randomize.grid(row=0, column=1)
 
-        self.listup_maps()
+        self.list_up_maps()
 
         # server_address
         self.menu_server_address = ttk.Label(
@@ -310,7 +310,7 @@ class Game_Window(tk.Frame):
         self.menu_frame_map_select.grid(row=2, column=0)
         self.menu_frame_settings.grid(row=1, column=1)
 
-    def cliants_menu(self, name):
+    def clients_menu(self, name):
         label_ver = tk.StringVar(value='名前:\nIP:')
         frame = ttk.Labelframe(self.big_flame_menu, text=name)
         frame.columnconfigure(2, weight=1)
@@ -332,8 +332,8 @@ class Game_Window(tk.Frame):
 
         return frame, label_ver, spinbox_ver, combobox_ver, button, spinbox, combobox
 
-    def map_randmize(self):
-        self.listup_maps()
+    def map_randomize(self):
+        self.list_up_maps()
         self.menu_map_ver.set(random.choice(self.menu_combobox['values']))
 
     def save_config(self, flag=True):
@@ -374,9 +374,9 @@ class Game_Window(tk.Frame):
     def change_map(self):
         if (c := filedialog.askdirectory(initialdir=__file__)) != '':
             config.d['StagePath'] = c
-            self.listup_maps()
+            self.list_up_maps()
 
-    def listup_maps(self):
+    def list_up_maps(self):
         l = []
         for i in os.listdir(config.d['StagePath']):
             if i[-6:] == '.CHmap':
@@ -435,9 +435,13 @@ class Game_Window(tk.Frame):
         self.menu_label_ver_hot.set('名前:\nIP:')
 
     def start_game(self):
+        # ゲームの停止も担当する
         if self.cool_state == self.hot_state == 2:
             if not self.is_game_started:
                 self.menu_game_start['text'] = 'ゲーム停止'
+                
+                self.menu_button_cool['state'] = 'disable'
+                self.menu_button_hot['state'] = 'disable'
                 
                 self.is_game_started = True
                 self.game_screen()
@@ -457,6 +461,9 @@ class Game_Window(tk.Frame):
             else:
                 self.menu_game_start['text'] = 'ゲーム開始'
                 self.menu_game_start['state'] = 'disable'
+                
+                self.menu_button_cool['state'] = 'normal'
+                self.menu_button_hot['state'] = 'normal'
                 
                 self.is_game_started = False
                 if self.game.is_alive():
@@ -1039,9 +1046,9 @@ class Receiver:
         self.timeout = 0
         self.mode = 'User'
         self.socket = socket.socket()
-        self.to_cliant_socket = socket.socket()
+        self.to_client_socket = socket.socket()
         self.flag_socket = False  # socket が listenかどうか
-        self.flag_to_cilant_socket = False  # to_cliant_socket が つながったかどうか
+        self.flag_to_client_socket = False  # to_client_socket が つながったかどうか
         self.flag_bot_name = False
         self.flag_ended = False
 
@@ -1063,9 +1070,9 @@ class Receiver:
                         self.flag_socket = True
                     case 'd':  # dis-connect
                         self.mode = 'User'
-                        self.to_cliant_socket.close()
+                        self.to_client_socket.close()
                         self.flag_socket = False
-                        self.flag_to_cilant_socket = False
+                        self.flag_to_client_socket = False
                         self.flag_bot_name = False
                         self.flag_ended = False
                     case 's':  # start
@@ -1081,19 +1088,19 @@ class Receiver:
 
             if self.flag_socket:
                 try:
-                    self.to_cliant_socket, self.cliant = self.socket.accept()
+                    self.to_client_socket, self.client = self.socket.accept()
                 except BlockingIOError:
                     pass
                 else:
                     self.flag_socket = False
-                    self.flag_to_cilant_socket = True
+                    self.flag_to_client_socket = True
 
-            if self.flag_to_cilant_socket:
+            if self.flag_to_client_socket:
                 try:
-                    c = self.to_cliant_socket.recv(4096)
+                    c = self.to_client_socket.recv(4096)
                     self.pipe.send('connect')
                     self.pipe.send(c.decode('utf-8').strip())
-                    self.pipe.send(self.cliant[0])
+                    self.pipe.send(self.client[0])
                 except BlockingIOError as e:
                     pass
                 except ConnectionResetError:
@@ -1116,14 +1123,14 @@ class Receiver:
                     self.close()
                 match pipe.recv():
                     case 't':  # your turn
-                        self.to_cliant_socket.send(b'@')
+                        self.to_client_socket.send(b'@')
                         if self.socket_receive() != 'gr':
                             self.close()
                         self.pipe.send('ok')
-                        self.to_cliant_socket.send(
+                        self.to_client_socket.send(
                             self.pipe.recv().encode('utf-8'))
                         self.pipe.send(self.socket_receive())
-                        self.to_cliant_socket.send(
+                        self.to_client_socket.send(
                             self.pipe.recv().encode('utf-8'))
                         if self.socket_receive() != '#':
                             self.close()
@@ -1141,7 +1148,7 @@ class Receiver:
             elif time.time() - start >= self.timeout:
                 self.close()
             try:
-                c = self.to_cliant_socket.recv(4096)
+                c = self.to_client_socket.recv(4096)
                 r = c.decode('utf-8').strip()
             except BlockingIOError:
                 continue
@@ -1154,10 +1161,10 @@ class Receiver:
     def close(self):
         self.flag_ended = True
         self.flag_socket = False
-        self.flag_to_cilant_socket = False
+        self.flag_to_client_socket = False
         self.flag_bot_name = False
-        self.to_cliant_socket.shutdown(socket.SHUT_RDWR)
-        self.to_cliant_socket.close()
+        self.to_client_socket.shutdown(socket.SHUT_RDWR)
+        self.to_client_socket.close()
         try:
             self.pipe.send('Cl')
         except BrokenPipeError:
