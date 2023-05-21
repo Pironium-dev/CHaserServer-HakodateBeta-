@@ -445,7 +445,6 @@ class Game_Window(tk.Frame):
                 
                 self.is_game_started = True
                 self.game_screen()
-                self.write_map()
                 self.save_config(False)
                 self.big_flame_game.tkraise()
                 self.has_game_started = True
@@ -458,6 +457,7 @@ class Game_Window(tk.Frame):
                             r'/' + self.menu_map_ver.get())
                 self.pipe.send(int(self.menu_settings_timeout_ver.get()))
                 self.pipe.send(int(self.menu_settings_speed_ver.get()))
+                self.write_map()
             else:
                 self.menu_game_start['text'] = 'ゲーム開始'
                 self.menu_game_start['state'] = 'disable'
