@@ -458,6 +458,7 @@ class Game_Window(tk.Frame):
                 self.pipe.send(int(self.menu_settings_timeout_ver.get()))
                 self.pipe.send(int(self.menu_settings_speed_ver.get()))
                 self.write_map()
+                self.progressbar['maximum'] = self.whole_turn
             else:
                 self.menu_game_start['text'] = 'ゲーム開始'
                 self.menu_game_start['state'] = 'disable'
@@ -611,7 +612,6 @@ class Game_Window(tk.Frame):
                 hot = j['Hot']
                 cool = j['Cool']
                 self.whole_turn = j['Turn']
-                self.progressbar['maximum'] = self.whole_turn
         except FileNotFoundError:
             if self.menu_map_ver.get() == 'Blank':
                 game_map = [[0 for i in range(15)] for i in range(17)]
