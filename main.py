@@ -334,7 +334,11 @@ class Game_Window(tk.Frame):
 
     def map_randomize(self):
         self.list_up_maps()
-        self.menu_map_ver.set(random.choice(self.menu_combobox['values']))
+        if len(self.menu_combobox['values']) != 1:
+            while self.menu_map_ver.get() == (c := random.choice(self.menu_combobox['values'])):
+                pass
+            self.menu_map_ver.set(c)
+        self.write_menu_map()
 
     def save_config(self, flag=True):
         # flag が True なら終了
@@ -583,7 +587,7 @@ class Game_Window(tk.Frame):
                         self.game_screen_id[i][j] = self.game_canvas.create_image(
                             15 + j * 25, 15 + i * 25, image=self.item_image)
 
-    def write_menu_map(self, _):
+    def write_menu_map(self, _=None):
         game_map, hot, cool = self.read_map()
         padding = 10
         size = 18
