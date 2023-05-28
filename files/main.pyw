@@ -2,7 +2,6 @@ import tkinter as tk
 import tkinter.ttk as ttk
 import multiprocessing
 import threading
-from PIL import ImageTk
 import tkinter.font as tk_f
 import socket
 import random
@@ -74,10 +73,10 @@ class Game_Window(tk.Frame):
         self.game_frame_hot = ttk.Labelframe(self.big_flame_game, text="Hot")
 
         # picture
-        self.wall_image = ImageTk.PhotoImage(file="./画像/wall.png")
-        self.item_image = ImageTk.PhotoImage(file="./画像/item.png")
-        self.hot_image = ImageTk.PhotoImage(file="./画像/Hot.png")
-        self.cool_image = ImageTk.PhotoImage(file="./画像/Cool.png")
+        self.wall_image = tk.PhotoImage(file="./resources/wall.png")
+        self.item_image = tk.PhotoImage(file="./resources/item.png")
+        self.hot_image = tk.PhotoImage(file="./resources/Hot.png")
+        self.cool_image = tk.PhotoImage(file="./resources/Cool.png")
 
         # canvas
 
@@ -228,10 +227,10 @@ class Game_Window(tk.Frame):
         self.menu_mode_ver_hot.set(config.d["HotMode"])
 
         # picture
-        self.swall_image = ImageTk.PhotoImage(file="./画像/Swall.png")
-        self.sitem_image = ImageTk.PhotoImage(file="./画像/Sitem.png")
-        self.shot_image = ImageTk.PhotoImage(file="./画像/SHot.png")
-        self.scool_image = ImageTk.PhotoImage(file="./画像/SCool.png")
+        self.swall_image = tk.PhotoImage(file="./resources/Swall.png")
+        self.sitem_image = tk.PhotoImage(file="./resources/Sitem.png")
+        self.shot_image = tk.PhotoImage(file="./resources/SHot.png")
+        self.scool_image = tk.PhotoImage(file="./resources/SCool.png")
 
         # map_view
         size = 18
