@@ -418,8 +418,8 @@ class Game_Window(tk.Frame):
     def list_up_maps(self):
         l = []
         for i in os.listdir(config.d["StagePath"]):
-            if i[-6:] == ".CHmap":
-                l.append(os.path.basename(i)[:-6])
+            if i[-4:] == "json":
+                l.append(os.path.basename(i)[:-5])
         l.append("Blank")
         self.menu_combobox["values"] = l
 
@@ -678,7 +678,7 @@ class Game_Window(tk.Frame):
     def read_map(self):
         try:
             with open(
-                config.d["StagePath"] + r"/" + self.menu_map_ver.get() + ".CHmap", "r"
+                config.d["StagePath"] + r"/" + self.menu_map_ver.get() + ".json", "r"
             ) as f:
                 j = json.load(f)
                 game_map = j["Map"]

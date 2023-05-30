@@ -177,7 +177,7 @@ class Game:
             self.cool_place = [6, 7]
             self.turn = 100
         else:
-            with open(self.map_name + ".CHmap", "r") as f:
+            with open(self.map_name + ".json", "r") as f:
                 j = json.load(f)
                 self.map = j["Map"]
                 self.hot_place = j["Hot"]
