@@ -7,14 +7,12 @@
 
 ## インストール
 
-実行にはPythonの最新版とPillowが必要です  
-Pillowは、Pythonインストール後、以下を実行してください  
+現在制作中に付き、まだ確定していません。
 
-```PowerPoint
-pip install Pillow
-```
+Githubのリポジトリをダウンロード後、launch.batで起動できます。
+python3.11.3で動作確認をしました。
 
-[ダウンロードリンク](https://github.com/piroping/CHaserServer-HakodateBeta-/releases/download/release/HakodateCHaserBeta.zip)
+[~~ダウンロードリンク~~](https://github.com/piroping/CHaserServer-HakodateBeta-/releases/download/release/HakodateCHaserBeta.zip)
 
 ## 使い方
 
