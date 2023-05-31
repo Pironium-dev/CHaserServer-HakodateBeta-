@@ -165,19 +165,22 @@ class Window(tk.Frame):
             defaultextension="json",
         )
         if file is not None:
-            d = json.load(file)
-            for i, x in enumerate(self.convert(d["Map"])):
-                for j, y in enumerate(x):
-                    self.canvas.delete(f"{i}_{j}")
-                    self.place_chip(i, j, y)
-            if self.place_cool[0] != -1:
-                self.canvas.delete("client")
-            self.place_cool = d["Cool"]
-            self.place_chip(*self.place_cool, kind=1)
-            self.place_hot = d["Hot"]
-            self.turn_var.set(str(d["Turn"]))
+            try:
+                d = json.load(file)
+                for i, x in enumerate(self.convert(d["Map"])):
+                    for j, y in enumerate(x):
+                        self.canvas.delete(f"{i}_{j}")
+                        self.place_chip(i, j, y)
+                if self.place_cool[0] != -1:
+                    self.canvas.delete("client")
+                self.place_cool = d["Cool"]
+                self.place_chip(*self.place_cool, kind=1)
+                self.place_hot = d["Hot"]
+                self.turn_var.set(str(d["Turn"]))
 
-            self.file_name = os.path.splitext(os.path.basename(file.name))[0]
+                self.file_name = os.path.splitext(os.path.basename(file.name))[0]
+            except KeyError:
+                showerror("Map Edit", "間違ったファイルを読み込みました。")
 
     def symmetry_place(self, x, y):
         return 14 - x, 16 - y
