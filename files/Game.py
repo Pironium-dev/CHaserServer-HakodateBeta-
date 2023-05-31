@@ -7,7 +7,6 @@ from typing import NoReturn
 import os
 import socket
 
-
 class Game:
     direction: dict[str, tuple[int, int]] = {
         "r": (1, 0),
