@@ -384,7 +384,7 @@ class Receiver:
                         self.socket = socket.socket()
                         if self.mode != "Stay":
                             if self.mode == "Bot":
-                                os.system("start Bot.py " + str(self.port))
+                                os.system("start py Bot.py " + str(self.port))
                             self.socket.setblocking(False)
                             self.socket.bind(("", int(self.port)))
                             self.socket.listen()
