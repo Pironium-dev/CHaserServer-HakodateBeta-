@@ -5,6 +5,7 @@ import json
 from itertools import chain
 import os
 
+
 class Window(tk.Frame):
     def __init__(self, master):
         tk.Frame.__init__(self, master)
@@ -14,8 +15,8 @@ class Window(tk.Frame):
         self.map = [[0 for i in range(17)] for j in range(15)]  # XとYは逆
         self.place_hot = [-1, -1]
         self.place_cool = [-1, -1]
-        
-        self.file_name = ''
+
+        self.file_name = ""
 
     def write_screen(self):
         # image
@@ -139,14 +140,14 @@ class Window(tk.Frame):
 
     def save(self):
         if self.place_cool == [-1, -1] or self.place_hot == [-1, -1]:
-            showerror('Map Edit', 'クライアントが配置されていません')
+            showerror("Map Edit", "クライアントが配置されていません")
             return
         file = asksaveasfile(
             "w",
             initialdir=self.config["StagePath"],
             filetypes=[("マップ", ".json")],
             defaultextension="json",
-            initialfile=self.file_name
+            initialfile=self.file_name,
         )
         if file is not None:
             d = {
@@ -161,20 +162,21 @@ class Window(tk.Frame):
         file = askopenfile(
             initialdir=self.config["StagePath"],
             filetypes=[("マップ", ".json")],
-            defaultextension="json")
+            defaultextension="json",
+        )
         if file is not None:
             d = json.load(file)
-            for i, x in enumerate(self.convert(d['Map'])):
+            for i, x in enumerate(self.convert(d["Map"])):
                 for j, y in enumerate(x):
-                    self.canvas.delete(f'{i}_{j}')
+                    self.canvas.delete(f"{i}_{j}")
                     self.place_chip(i, j, y)
             if self.place_cool[0] != -1:
                 self.canvas.delete("client")
-            self.place_cool = d['Cool']
+            self.place_cool = d["Cool"]
             self.place_chip(*self.place_cool, kind=1)
-            self.place_hot = d['Hot']
-            self.turn_var.set(str(d['Turn']))
-            
+            self.place_hot = d["Hot"]
+            self.turn_var.set(str(d["Turn"]))
+
             self.file_name = os.path.splitext(os.path.basename(file.name))[0]
 
     def symmetry_place(self, x, y):
@@ -219,7 +221,7 @@ class Window(tk.Frame):
             s += 1
             s %= l
         return output
-    
+
     def read_config(self):
         with open("Config.dt", "r") as f:
             self.config = json.load(f)
