@@ -257,10 +257,15 @@ class Game:
                         )
                     )
                 )
+                place[0] += Game.direction[r[1]][0] * 2
+                place[1] += Game.direction[r[1]][1] * 2
+                self.window_pipe.send(place)
             case "s":
                 pipe.send(
                     (c := self.output_line(place[0], place[1], *Game.direction[r[1]]))
                 )
+                self.window_pipe.send(place)
+                self.window_pipe.send(Game.direction[r[1]])
             case "C":
                 self.game_set(cl, 5, turn)
         self.log.append(c)
@@ -444,7 +449,7 @@ class Receiver:
                     self.close()
                 match pipe.recv():
                     case "t":  # your turn
-                        self.to_client_socket.send(b"@")
+                        self.to_client_socket.send(b"@")  # Error ConnectionResetError
                         if self.socket_receive() != "gr":
                             self.close()
                         self.pipe.send("ok")

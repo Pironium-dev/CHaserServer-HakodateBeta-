@@ -19,6 +19,6 @@ class ReadConfig:
 
     def reset(self):
         with open('Config.dt', mode='w', encoding='utf-8') as f:
-            self.d = {"CoolPort": 2009, "HotPort": 2010, "GameSpeed": 100, "TimeOut": 2000, "HotMode": "User",
+            self.d = {"CoolPort": 2009, "HotPort": 2010, "GameSpeed": 500, "TimeOut": 2000, "HotMode": "User",
                       "CoolMode": "User", "LogPath": "./log", "StagePath": "./maps/", "NextMap": "Blank", "Score": False, "Log": False}
             json.dump(self.d, f, indent=4)

@@ -5,6 +5,7 @@ import threading
 import tkinter.font as tk_f
 import socket
 import random
+import time
 from tkinter import filedialog
 import os
 import json
@@ -77,6 +78,7 @@ class Game_Window(tk.Frame):
         self.item_image = tk.PhotoImage(file="./resources/item.png")
         self.hot_image = tk.PhotoImage(file="./resources/Hot.png")
         self.cool_image = tk.PhotoImage(file="./resources/Cool.png")
+        self.sight_image = tk.PhotoImage(file="./resources/Sight.png")
 
         # canvas
 
@@ -479,13 +481,13 @@ class Game_Window(tk.Frame):
             if not self.is_game_started:
                 self.menu_game_start["text"] = "ゲーム停止"
 
-                self.menu_button_cool["state"] = "disable"
+                self.menu_button_cool["state"] = "disable"  # to do
                 self.menu_button_hot["state"] = "disable"
+                self.menu_settings_spinbox_speed["state"] = "disable"
 
                 self.is_game_started = True
                 self.game_screen()
                 self.save_config(False)
-                self.big_flame_game.tkraise()
                 self.has_game_started = True
 
                 self.label_cool_name["text"] = self.names["Cool"]
@@ -503,6 +505,8 @@ class Game_Window(tk.Frame):
 
                 self.menu_button_cool["state"] = "normal"
                 self.menu_button_hot["state"] = "normal"
+                self.menu_settings_spinbox_speed["state"] = "normal"
+                
 
                 self.is_game_started = False
                 if self.game.is_alive():
@@ -559,6 +563,10 @@ class Game_Window(tk.Frame):
                             cl = self.pipe.recv()
                             if cl != "gameset":
                                 nowpos = self.pipe.recv()
+                                
+                                first = self.list_up_look(*nowpos)
+                                second = []
+
                                 match self.pipe.recv():
                                     case "w":
                                         i, j = self.pipe.recv()
@@ -584,6 +592,10 @@ class Game_Window(tk.Frame):
                                             15 + j * 25,
                                             image=self.wall_image,
                                         )
+                                    case "l":
+                                        second = self.list_up_look(*self.pipe.recv())
+                                    case "s":
+                                        second = self.list_up_search(*self.pipe.recv(), *self.pipe.recv())
 
                                 if cl == "Hot":
                                     self.var_prog_turn.set(self.var_prog_turn.get() + 1)
@@ -593,6 +605,9 @@ class Game_Window(tk.Frame):
                                     self.point_set(
                                         self.whole_turn - self.var_prog_turn.get()
                                     )
+                                
+                                self.handle_sight(first, second)
+                                
                             else:
                                 self.game_set()
 
@@ -686,13 +701,11 @@ class Game_Window(tk.Frame):
                 cool = j["Cool"]
                 self.whole_turn = j["Turn"]
         except FileNotFoundError:
-            if self.menu_map_ver.get() == "Blank":
-                game_map = [[0 for i in range(15)] for i in range(17)]
-                hot = [8, 9]
-                cool = [6, 7]
-                self.whole_turn = 100
-            else:
-                raise FileNotFoundError
+            game_map = [[0 for i in range(15)] for i in range(17)]
+            hot = [8, 9]
+            cool = [6, 7]
+            self.whole_turn = 100
+            self.menu_map_ver.set('Blank')
         return game_map, hot, cool
 
     def game_set(self):
@@ -763,6 +776,48 @@ class Game_Window(tk.Frame):
                 self.labels[c].set(f"Item:{self.points[c]}")
                 self.labels[h].set(f"Item:{self.points[h]}")
 
+    def handle_sight(self, first, second):
+        self.write_sight(0, first)
+        t1 = threading.Thread(target=self.write_sight, args=(self.menu_settings_speed_ver.get() // 2, second))
+        
+        t1.start()
+        """
+        self.write_sight(first)
+        self.after(self.menu_settings_speed_ver.get())
+        # self.write_sight(second)
+        """
+    
+    def write_sight(self, t, li:list[tuple[int, int]]):
+        time.sleep(t / 1000)
+        try:
+            self.game_canvas.delete('sight')
+            for i in li:
+                self.game_canvas.create_image(
+                    15 + i[0] * 25,
+                    15 + i[1] * 25,
+                    image=self.sight_image,
+                    tag='sight'
+                )
+        except tk.TclError as e:
+            print(e)
+
+    def delete_sight(self):
+        self.game_canvas.delete('sight')
+    
+    def list_up_look(self, x, y):
+        li = []
+        for i in range(-1, 2):
+            for j in range(-1, 2):
+                li.append((x + i, y + j))
+        return li
+
+    def list_up_search(self, x, y, dx, dy):
+        li = []
+        for i in range(9):
+            x += dx
+            y += dy
+            li.append((x, y))
+        return li
 
 if __name__ == "__main__":
     config = ReadConfig.ReadConfig()
