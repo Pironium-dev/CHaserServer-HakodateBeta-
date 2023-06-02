@@ -449,14 +449,17 @@ class Receiver:
                     self.close()
                 match pipe.recv():
                     case "t":  # your turn
-                        self.to_client_socket.send(b"@")  # Error ConnectionResetError
-                        if self.socket_receive() != "gr":
-                            self.close()
-                        self.pipe.send("ok")
-                        self.to_client_socket.send(self.pipe.recv().encode("utf-8"))
-                        self.pipe.send(self.socket_receive())
-                        self.to_client_socket.send(self.pipe.recv().encode("utf-8"))
-                        if self.socket_receive() != "#":
+                        try:
+                            self.to_client_socket.send(b"@")  # Error ConnectionResetError
+                            if self.socket_receive() != "gr":
+                                self.close()
+                            self.pipe.send("ok")
+                            self.to_client_socket.send(self.pipe.recv().encode("utf-8"))
+                            self.pipe.send(self.socket_receive())
+                            self.to_client_socket.send(self.pipe.recv().encode("utf-8"))
+                            if self.socket_receive() != "#":
+                                self.close()
+                        except ConnectionResetError:
                             self.close()
                     case "d":
                         self.close()
