@@ -17,6 +17,8 @@ class Window(tk.Frame):
         self.place_cool = [-1, -1]
 
         self.file_name = ""
+        
+        self.changed_rule_check_button()
 
     def write_screen(self):
         # image
@@ -70,6 +72,11 @@ class Window(tk.Frame):
             self.setting_frame, text="対称", variable=self.is_symmetry
         )
 
+        self.is_rule = tk.BooleanVar(value=True)
+        self.check_button_rule = tk.Checkbutton(
+            self.setting_frame, text="ルール", variable=self.is_rule, command=self.changed_rule_check_button
+        )
+
         self.turn_var = tk.StringVar(value="100")
         self.turn_label = tk.Label(self.setting_frame, text="TURN")
         self.turn_spinbox = tk.Spinbox(
@@ -88,6 +95,7 @@ class Window(tk.Frame):
         self.help_label.pack()
 
         self.check_button_symmetry.pack()
+        self.check_button_rule.pack()
 
         self.turn_label.pack()
         self.turn_spinbox.pack()
@@ -106,6 +114,8 @@ class Window(tk.Frame):
         x, y = self.coordinate(event)
         if x == -1:
             return
+        if self.is_rule.get() and x == 7 and y == 8:
+            return
         if [x, y] == self.place_cool or [x, y] == self.place_hot:
             return
         kind = self.radio_box_var.get()
@@ -117,7 +127,13 @@ class Window(tk.Frame):
                 self.place_cool = [x, y]
                 self.place_hot = list(self.symmetry_place(x, y))
             return
-
+        if kind == 2 and self.is_rule.get():
+            if x == 0 or x == 14 or y == 16 or y == 0:
+                return
+            if x == self.place_cool[0] and abs(y - self.place_cool[1]) == 9:
+                return
+            if x == self.place_hot[0] and abs(y - self.place_hot[1]) == 9:
+                return
         self.place_chip(x, y, kind)
         self.map[x][y] = kind
         if self.is_symmetry.get():
@@ -129,14 +145,11 @@ class Window(tk.Frame):
         x, y = self.coordinate(event)
         if x == -1:
             return
+        if self.is_rule.get() and x == 7 and y == 8:
+            return
         if [x, y] == self.place_cool or [x, y] == self.place_hot:
             return
-        self.canvas.delete(f"{x}_{y}")
-        self.map[x][y] = 0
-        x, y = self.symmetry_place(x, y)
-        if self.is_symmetry.get() and self.map[x][y] != 0:
-            self.canvas.delete(f"{x}_{y}")
-            self.map[x][y] = 0
+        self.delete_chip(x, y)
 
     def save(self):
         if self.place_cool == [-1, -1] or self.place_hot == [-1, -1]:
@@ -215,6 +228,14 @@ class Window(tk.Frame):
                     15 + x * 25, 15 + y * 25, image=self.item_image, tag=f"{x}_{y}"
                 )
 
+    def delete_chip(self, x, y):
+        self.canvas.delete(f"{x}_{y}")
+        self.map[x][y] = 0
+        x, y = self.symmetry_place(x, y)
+        if self.is_symmetry.get() and self.map[x][y] != 0:
+            self.canvas.delete(f"{x}_{y}")
+            self.map[x][y] = 0
+
     def convert(self, li: list):
         output = [[] for i in li[0]]
         l = len(li[0])
@@ -228,6 +249,15 @@ class Window(tk.Frame):
     def read_config(self):
         with open("Config.dt", "r") as f:
             self.config = json.load(f)
+
+    def changed_rule_check_button(self, _=None):
+        if self.is_rule.get():
+            self.map[7][8] = 3
+            self.place_chip(7, 8, 3)
+            self.is_symmetry.set(True)
+            self.check_button_symmetry["state"] = "disable"
+        else:
+            self.check_button_symmetry["state"] = "normal"
 
 
 if __name__ == "__main__":
