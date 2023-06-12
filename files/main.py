@@ -14,6 +14,7 @@ import ReadConfig
 import Game
 
 
+# py
 class Game_Window(tk.Frame):
     def __init__(self, master: tk.Tk):
         self.game_pipe, self.pipe = multiprocessing.Pipe()
@@ -506,7 +507,6 @@ class Game_Window(tk.Frame):
                 self.menu_button_cool["state"] = "normal"
                 self.menu_button_hot["state"] = "normal"
                 self.menu_settings_spinbox_speed["state"] = "normal"
-                
 
                 self.is_game_started = False
                 if self.game.is_alive():
@@ -563,7 +563,7 @@ class Game_Window(tk.Frame):
                             cl = self.pipe.recv()
                             if cl != "gameset":
                                 nowpos = self.pipe.recv()
-                                
+
                                 first = self.list_up_look(*nowpos)
                                 second = []
 
@@ -595,7 +595,9 @@ class Game_Window(tk.Frame):
                                     case "l":
                                         second = self.list_up_look(*self.pipe.recv())
                                     case "s":
-                                        second = self.list_up_search(*self.pipe.recv(), *self.pipe.recv())
+                                        second = self.list_up_search(
+                                            *self.pipe.recv(), *self.pipe.recv()
+                                        )
 
                                 if cl == "Hot":
                                     self.var_prog_turn.set(self.var_prog_turn.get() + 1)
@@ -605,9 +607,9 @@ class Game_Window(tk.Frame):
                                     self.point_set(
                                         self.whole_turn - self.var_prog_turn.get()
                                     )
-                                
+
                                 self.handle_sight(first, second)
-                                
+
                             else:
                                 self.game_set()
 
@@ -705,7 +707,7 @@ class Game_Window(tk.Frame):
             hot = [8, 9]
             cool = [6, 7]
             self.whole_turn = 100
-            self.menu_map_ver.set('Blank')
+            self.menu_map_ver.set("Blank")
         return game_map, hot, cool
 
     def game_set(self):
@@ -778,32 +780,32 @@ class Game_Window(tk.Frame):
 
     def handle_sight(self, first, second):
         self.write_sight(0, first)
-        t1 = threading.Thread(target=self.write_sight, args=(self.menu_settings_speed_ver.get() // 2, second))
-        
+        t1 = threading.Thread(
+            target=self.write_sight,
+            args=(self.menu_settings_speed_ver.get() // 2, second),
+        )
+
         t1.start()
         """
         self.write_sight(first)
         self.after(self.menu_settings_speed_ver.get())
         # self.write_sight(second)
         """
-    
-    def write_sight(self, t, li:list[tuple[int, int]]):
+
+    def write_sight(self, t, li: list[tuple[int, int]]):
         time.sleep(t / 1000)
         try:
-            self.game_canvas.delete('sight')
+            self.game_canvas.delete("sight")
             for i in li:
                 self.game_canvas.create_image(
-                    15 + i[0] * 25,
-                    15 + i[1] * 25,
-                    image=self.sight_image,
-                    tag='sight'
+                    15 + i[0] * 25, 15 + i[1] * 25, image=self.sight_image, tag="sight"
                 )
         except tk.TclError as e:
             print(e)
 
     def delete_sight(self):
-        self.game_canvas.delete('sight')
-    
+        self.game_canvas.delete("sight")
+
     def list_up_look(self, x, y):
         li = []
         for i in range(-1, 2):
@@ -818,6 +820,7 @@ class Game_Window(tk.Frame):
             y += dy
             li.append((x, y))
         return li
+
 
 if __name__ == "__main__":
     config = ReadConfig.ReadConfig()

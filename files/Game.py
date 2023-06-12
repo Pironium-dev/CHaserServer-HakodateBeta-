@@ -8,6 +8,7 @@ import os
 import socket
 import subprocess
 
+
 class Game:
     direction: dict[str, tuple[int, int]] = {
         "r": (1, 0),
@@ -451,7 +452,9 @@ class Receiver:
                 match pipe.recv():
                     case "t":  # your turn
                         try:
-                            self.to_client_socket.send(b"@")  # Error ConnectionResetError
+                            self.to_client_socket.send(
+                                b"@"
+                            )  # Error ConnectionResetError
                             if self.socket_receive() != "gr":
                                 self.close()
                             self.pipe.send("ok")
@@ -498,11 +501,13 @@ class Receiver:
         except BrokenPipeError:
             pass
         exit()
-    
+
     def execute_client(self, port):
-        process = subprocess.Popen(os.path.abspath('./Clients/Bot.py'), shell=True, stdin=subprocess.PIPE)
-        lout = [str(port), 'Bot', '127.0.0.1']
-        l = ('\n'.join(lout)).encode()
+        process = subprocess.Popen(
+            os.path.abspath("./Clients/Bot.py"), shell=True, stdin=subprocess.PIPE
+        )
+        lout = [str(port), "Bot", "127.0.0.1"]
+        l = ("\n".join(lout)).encode()
         try:
             process.communicate(input=l, timeout=0)
         except subprocess.TimeoutExpired:
