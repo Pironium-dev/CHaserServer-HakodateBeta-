@@ -14,7 +14,6 @@ import ReadConfig
 import Game
 
 
-# py
 class Game_Window(tk.Frame):
     def __init__(self, master: tk.Tk):
         self.game_pipe, self.pipe = multiprocessing.Pipe()
