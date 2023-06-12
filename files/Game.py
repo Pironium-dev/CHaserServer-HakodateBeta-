@@ -6,6 +6,7 @@ import ReadConfig
 from typing import NoReturn
 import os
 import socket
+import subprocess
 
 class Game:
     direction: dict[str, tuple[int, int]] = {
@@ -389,7 +390,7 @@ class Receiver:
                         self.socket = socket.socket()
                         if self.mode != "Stay":
                             if self.mode == "Bot":
-                                os.system("start py Bot.py " + str(self.port))
+                                self.execute_client(self.port)
                             self.socket.setblocking(False)
                             self.socket.bind(("", int(self.port)))
                             self.socket.listen()
@@ -497,3 +498,12 @@ class Receiver:
         except BrokenPipeError:
             pass
         exit()
+    
+    def execute_client(self, port):
+        process = subprocess.Popen(os.path.abspath('./Clients/Bot.py'), shell=True, stdin=subprocess.PIPE)
+        lout = [str(port), 'Bot', '127.0.0.1']
+        l = ('\n'.join(lout)).encode()
+        try:
+            process.communicate(input=l, timeout=0)
+        except subprocess.TimeoutExpired:
+            pass
