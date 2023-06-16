@@ -781,7 +781,7 @@ class Game_Window(tk.Frame):
         self.write_sight(0, first)
         t1 = threading.Thread(
             target=self.write_sight,
-            args=(self.menu_settings_speed_ver.get() // 2, second),
+            args=(int(self.menu_settings_speed_ver.get() // 2), second),
         )
 
         t1.start()
