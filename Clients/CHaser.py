@@ -1,14 +1,16 @@
 import socket
 import ipaddress
 import os
-
+import sys
 
 class Client:
     def __init__(self):
-        self.port = input('ポート番号を入力してください ⇒ ')
-        self.name = input('名前を入力してください ⇒ ')
-        self.host = input('IPアドレスを入力してください ⇒ ')
-        
+        if len(sys.argv) == 1:
+            self.port = input('ポート番号を入力してください ⇒ ')
+            self.name = input('名前を入力してください ⇒ ')
+            self.host = input('IPアドレスを入力してください ⇒ ')
+        else:
+            self.port, self.name, self.host = sys.argv[1:]
 
         if not self.__ip_judge(self.host):
             os._exit(1)

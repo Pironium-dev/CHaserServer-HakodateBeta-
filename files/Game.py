@@ -503,12 +503,10 @@ class Receiver:
         exit()
 
     def execute_client(self, port):
-        process = subprocess.Popen(
-            os.path.abspath("./Clients/Bot.py"), shell=True, stdin=subprocess.PIPE
+        subprocess.Popen(
+            os.path.abspath("./Clients/Bot.py")
+            + " "
+            + " ".join([str(port), "Bot", "127.0.0.1"]),
+            shell=True,
+            stdin=subprocess.PIPE,
         )
-        lout = [str(port), "Bot", "127.0.0.1"]
-        l = ("\n".join(lout)).encode()
-        try:
-            process.communicate(input=l, timeout=0)
-        except subprocess.TimeoutExpired:
-            pass

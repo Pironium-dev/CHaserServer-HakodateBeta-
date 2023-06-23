@@ -84,13 +84,7 @@ class Window(tk.Frame):
         return l
     
     def execute_client(self, target:str, port:str, name:str, ipaddress:str, b: int):
-        self.process[b] = subprocess.Popen(os.path.abspath('./Clients/' + target), shell=True, stdin=subprocess.PIPE)
-        lout = [port, name, ipaddress]
-        l = ('\n'.join(lout)).encode()
-        try:
-            self.process[b].communicate(input=l, timeout=0)
-        except subprocess.TimeoutExpired:
-            pass
+        self.process[b] = subprocess.Popen(os.path.abspath('./Clients/' + target) + ' ' + ' '.join([port, name, ipaddress]), shell=True, stdin=subprocess.PIPE)
     
     def judge_available(self, _=None):
         if (self.left_port.get() == self.right_port.get()) or self.left_combobox.get().strip() == '' or self.right_combobox.get().strip() == '':
