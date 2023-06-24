@@ -203,7 +203,10 @@ class Game:
         pipe.send("t")
         if pipe.recv() != "ok":
             self.game_set(cl, 5, turn)
-        pipe.send(self.output_square(True, *self.cool_place))
+        if cl == 'Cool':
+            pipe.send(self.output_square(True, *self.cool_place))
+        else:
+            pipe.send(self.output_square(True, *self.hot_place))
         next_place = place.copy()
         r = pipe.recv()
         self.log.append(f"{cl} {r}")
@@ -474,9 +477,10 @@ class Receiver:
         start = time.time()
         r = ""
         while True:
+            
             if self.pipe.poll() and self.pipe.recv() == "d":
                 self.close()
-            elif time.time() - start >= self.timeout:
+            elif time.time() - start >= self.timeout / 1000:
                 self.close()
             try:
                 c = self.to_client_socket.recv(4096)
