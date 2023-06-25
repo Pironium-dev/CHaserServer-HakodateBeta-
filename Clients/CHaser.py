@@ -11,6 +11,7 @@ class Client:
             self.host = input('IPアドレスを入力してください ⇒ ')
         else:
             self.port, self.name, self.host = sys.argv[1:]
+        
 
         if not self.__ip_judge(self.host):
             os._exit(1)

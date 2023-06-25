@@ -31,7 +31,7 @@ class Game_Window(tk.Frame):
         master.protocol("WM_DELETE_WINDOW", self.save_config)
 
         self.points = {"Cool": 0, "Hot": 0}
-        self.labels = {}  # ゲームのポイントのラベルをまとめたもの
+        self.labels = {}
         self.names = {"Cool": "", "Hot": ""}
 
         # big_flame
@@ -101,7 +101,7 @@ class Game_Window(tk.Frame):
         )
 
         # font
-        self.font_normal = tk_f.Font(family="MSゴシック", size=25)
+        self.font_normal = tk_f.Font(size=25)
 
         # status
         self.var_turn = tk.StringVar()
@@ -123,12 +123,12 @@ class Game_Window(tk.Frame):
         self.label_winner = ttk.Label(
             self.game_frame_status,
             textvariable=self.var_winner,
-            font=(("MSゴシック", "30")),
+            font=(("", "30")),
         )
         self.label_reason = ttk.Label(
             self.game_frame_status,
             textvariable=self.var_reason,
-            font=(("MSゴシック", "20")),
+            font=(("", "20")),
         )
 
         self.label_turn.pack()
@@ -142,7 +142,7 @@ class Game_Window(tk.Frame):
         self.labels["Cool"].set("Item:0(Score:0)")
 
         self.label_cool_name = ttk.Label(
-            self.game_frame_cool, text="自動君", font=self.font_normal
+            self.game_frame_cool, text="", font=self.font_normal
         )
         self.label_cool_score = ttk.Label(
             self.game_frame_cool,
@@ -159,7 +159,7 @@ class Game_Window(tk.Frame):
         self.labels["Hot"].set("Item:0(Score:0)")
 
         self.label_hot_name = ttk.Label(
-            self.game_frame_hot, text="自動君", font=self.font_normal
+            self.game_frame_hot, text="", font=self.font_normal
         )
         self.label_hot_score = ttk.Label(
             self.game_frame_hot, textvariable=self.labels["Hot"], font=self.font_normal
@@ -250,7 +250,7 @@ class Game_Window(tk.Frame):
         )
         self.menu_combobox.bind("<<ComboboxSelected>>", self.write_menu_map)
         self.menu_map_randomize = ttk.Button(
-            self.menu_frame_map_select, text="ランダム", command=self.map_randomize
+            self.menu_frame_map_select, text="random", command=self.map_randomize
         )
         self.menu_combobox.grid(row=0, column=0, pady=5)
         self.menu_map_randomize.grid(row=0, column=1)
@@ -267,33 +267,24 @@ class Game_Window(tk.Frame):
         self.menu_server_address.grid(row=4, column=0)
 
         # settings
-        """
-        スコア
-        ログ保存するか
-        ゲーム進行速度
-        タイムアウト
-        ログ保存場所
-        マップ保存場所
-        設定リセット
-        """
         self.menu_frame_settings = ttk.Labelframe(self.big_flame_menu, text="設定")
 
         self.menu_settings_box_log = ttk.Checkbutton(
-            self.menu_frame_settings, text="ログ保存", variable=self.menu_settings_ver_log
+            self.menu_frame_settings, text="log", variable=self.menu_settings_ver_log
         )
 
         self.menu_settings_box_score = ttk.Checkbutton(
-            self.menu_frame_settings, text="スコア", variable=self.menu_settings_ver_score
+            self.menu_frame_settings, text="score", variable=self.menu_settings_ver_score
         )
 
         self.menu_settings_label_timeout = ttk.Label(
-            self.menu_frame_settings, text="タイムアウト(ms)", font=self.font
+            self.menu_frame_settings, text="timeout(ms)", font=self.font
         )
         self.menu_settings_spinbox_timeout = ttk.Spinbox(
             self.menu_frame_settings, textvariable=self.menu_settings_timeout_ver
         )
         self.menu_settings_label_speed = ttk.Label(
-            self.menu_frame_settings, text="進行速度(ms)", font=self.font
+            self.menu_frame_settings, text="progress(ms)", font=self.font
         )
         self.menu_settings_spinbox_speed = ttk.Spinbox(
             self.menu_frame_settings, textvariable=self.menu_settings_speed_ver
@@ -306,17 +297,17 @@ class Game_Window(tk.Frame):
         self.menu_settings_spinbox_speed["increment"] = 10
 
         self.menu_settings_button_log = ttk.Button(
-            self.menu_frame_settings, text="ログ保存場所", command=self.change_log
+            self.menu_frame_settings, text="change_log_path", command=self.change_log
         )
         self.menu_settings_button_log.grid(row=3, column=0)
 
         self.menu_settings_button_map = ttk.Button(
-            self.menu_frame_settings, text="マップ保存場所", command=self.change_map
+            self.menu_frame_settings, text="change_map_path", command=self.change_map
         )
         self.menu_settings_button_map.grid(row=3, column=1)
 
         self.menu_settings_button_reset = ttk.Button(
-            self.menu_frame_settings, text="設定のリセット", command=self.reset_config
+            self.menu_frame_settings, text="reset", command=self.reset_config
         )
         self.menu_settings_button_reset.grid(row=4, column=0, columnspan=2)
 
@@ -329,7 +320,7 @@ class Game_Window(tk.Frame):
 
         # game_start
         self.menu_game_start = ttk.Button(
-            self.big_flame_menu, text="ゲーム開始", command=self.start_game
+            self.big_flame_menu, text="start_game", command=self.start_game
         )
 
         self.menu_game_start.grid(row=2, column=1, sticky=tk.W + tk.E)
@@ -341,7 +332,7 @@ class Game_Window(tk.Frame):
         self.menu_frame_settings.grid(row=1, column=1)
 
     def clients_menu(self, name):
-        label_ver = tk.StringVar(value="名前:\nIP:")
+        label_ver = tk.StringVar(value="name:\nIP:")
         frame = ttk.Labelframe(self.big_flame_menu, text=name)
         frame.columnconfigure(2, weight=1)
         label = ttk.Label(
@@ -359,7 +350,7 @@ class Game_Window(tk.Frame):
             values=["User", "Stay", "Bot"],
             width=6,
         )
-        button = ttk.Button(frame, text="待機開始")
+        button = ttk.Button(frame, text="start_waiting")
         label.grid(row=0, column=0, sticky=tk.W, columnspan=2)
         spinbox.grid(row=1, column=0)
         combobox.grid(row=1, column=1)
@@ -378,7 +369,6 @@ class Game_Window(tk.Frame):
         self.write_menu_map()
 
     def save_config(self, flag=True):
-        # flag が True なら終了
         config.d["CoolPort"] = int(self.menu_port_ver_cool.get())
         config.d["HotPort"] = int(self.menu_port_ver_hot.get())
         config.d["GameSpeed"] = int(self.menu_settings_speed_ver.get())
@@ -440,7 +430,7 @@ class Game_Window(tk.Frame):
             self.pipe.send(self.menu_port_ver_cool.get())
             self.pipe.send(self.menu_mode_ver_cool.get())
             self.cool_state = 1
-            self.menu_button_cool["text"] = "接続待ち"
+            self.menu_button_cool["text"] = "wait"
             self.menu_cool_combobox["state"] = "disable"
             self.menu_cool_spinbox["state"] = "disable"
         else:
@@ -453,7 +443,7 @@ class Game_Window(tk.Frame):
             self.pipe.send(self.menu_port_ver_hot.get())
             self.pipe.send(self.menu_mode_ver_hot.get())
             self.hot_state = 1
-            self.menu_button_hot["text"] = "接続待ち"
+            self.menu_button_hot["text"] = "wait"
             self.menu_hot_combobox["state"] = "disable"
             self.menu_hot_spinbox["state"] = "disable"
         else:
@@ -462,26 +452,26 @@ class Game_Window(tk.Frame):
     def cool_disconnect(self):
         self.pipe.send("disconnect")
         self.cool_state = 0
-        self.menu_button_cool["text"] = "待機開始"
+        self.menu_button_cool["text"] = "start_waiting"
         self.menu_cool_combobox["state"] = "readonly"
         self.menu_cool_spinbox["state"] = "normal"
-        self.menu_label_ver_cool.set("名前:\nIP:")
+        self.menu_label_ver_cool.set("name:\nIP:")
 
     def hot_disconnect(self):
         self.pipe.send("disconnect")
         self.hot_state = 0
-        self.menu_button_hot["text"] = "待機開始"
+        self.menu_button_hot["text"] = "start_waiting"
         self.menu_hot_combobox["state"] = "readonly"
         self.menu_hot_spinbox["state"] = "normal"
-        self.menu_label_ver_hot.set("名前:\nIP:")
+        self.menu_label_ver_hot.set("name:\nIP:")
 
     def start_game(self):
         # ゲームの停止も担当する
         if self.cool_state == self.hot_state == 2:
             if not self.is_game_started:
-                self.menu_game_start["text"] = "ゲーム停止"
+                self.menu_game_start["text"] = "stop"
 
-                self.menu_button_cool["state"] = "disable"  # to do
+                self.menu_button_cool["state"] = "disable"
                 self.menu_button_hot["state"] = "disable"
                 self.menu_settings_spinbox_speed["state"] = "disable"
 
@@ -500,7 +490,7 @@ class Game_Window(tk.Frame):
                 self.write_map()
                 self.progressbar["maximum"] = self.whole_turn
             else:
-                self.menu_game_start["text"] = "ゲーム開始"
+                self.menu_game_start["text"] = "start_game"
                 self.menu_game_start["state"] = "disable"
 
                 self.menu_button_cool["state"] = "normal"
@@ -532,33 +522,32 @@ class Game_Window(tk.Frame):
                         case "Cool":
                             if self.pipe.recv() == "connect":
                                 self.cool_state = 2
-                                self.menu_button_cool["text"] = "切断"
+                                self.menu_button_cool["text"] = "disconnect"
                                 self.menu_label_ver_cool.set(
-                                    f"名前:{(c := self.pipe.recv())}\nIP:{self.pipe.recv()}"
+                                    f"name:{(c := self.pipe.recv())}\nIP:{self.pipe.recv()}"
                                 )
                                 self.names["Cool"] = c
                             else:
                                 self.cool_state = 0
-                                self.menu_button_cool["text"] = "待機開始"
+                                self.menu_button_cool["text"] = "start_waiting"
                                 self.menu_cool_combobox["state"] = "readonly"
                                 self.menu_cool_spinbox["state"] = "normal"
                                 self.menu_label_ver_cool.set("名前:\nIP:")
                         case "Hot":
                             if self.pipe.recv() == "connect":
                                 self.hot_state = 2
-                                self.menu_button_hot["text"] = "切断"
+                                self.menu_button_hot["text"] = "disconnect"
                                 self.menu_label_ver_hot.set(
-                                    f"名前:{(c := self.pipe.recv())}\nIP:{self.pipe.recv()}"
+                                    f"name:{(c := self.pipe.recv())}\nIP:{self.pipe.recv()}"
                                 )
                                 self.names["Hot"] = c
                             else:
                                 self.hot_state = 0
-                                self.menu_button_hot["text"] = "待機開始"
+                                self.menu_button_hot["text"] = "start_waiting"
                                 self.menu_hot_combobox["state"] = "readonly"
                                 self.menu_hot_spinbox["state"] = "normal"
                                 self.menu_label_ver_hot.set("名前:\nIP:")
                         case "Game":
-                            # アニメーション入れる
                             cl = self.pipe.recv()
                             if cl != "gameset":
                                 nowpos = self.pipe.recv()
@@ -724,23 +713,23 @@ class Game_Window(tk.Frame):
             case 1:
                 self.var_winner.set(f"{cl} WIN")
                 self.point_set(turn, cl)
-                self.var_reason.set("put勝ち")
+                self.var_reason.set("put_win")
             case 2:
                 self.var_winner.set(f"{cl} WIN")
                 self.point_set(turn, cl)
-                self.var_reason.set("put勝ち(囲み)")
+                self.var_reason.set("put_win(surround)")
             case 3:
                 self.var_winner.set(f"{cl} LOSE")
                 self.point_set(turn, self.inverse_client(cl))
-                self.var_reason.set("自滅負け(囲み)")
+                self.var_reason.set("put_lose(surround)")
             case 4:
                 self.var_winner.set(f"{cl} LOSE")
                 self.point_set(turn, self.inverse_client(cl))
-                self.var_reason.set("自滅負け")
+                self.var_reason.set("self-destruction")
             case 5:
                 self.var_winner.set(f"{cl} LOSE")
                 self.point_set(turn, self.inverse_client(cl))
-                self.var_reason.set("通信エラー")
+                self.var_reason.set("communication error")
         if self.menu_settings_ver_log.get():
             self.pipe.send("ok")
             self.pipe.send(config.d["LogPath"])

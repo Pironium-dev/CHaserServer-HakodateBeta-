@@ -12,7 +12,7 @@ class Window(tk.Frame):
         self.write_screen()
         self.read_config()
 
-        self.map = [[0 for i in range(17)] for j in range(15)]  # XとYは逆
+        self.map = [[0 for i in range(17)] for j in range(15)]
         self.place_hot = [-1, -1]
         self.place_cool = [-1, -1]
 
@@ -65,16 +65,16 @@ class Window(tk.Frame):
         self.radio_box_item.grid(row=1, column=2)
         self.radio_canvas.grid(row=0, column=0, columnspan=3)
 
-        self.help_label = tk.Label(self.setting_frame, text="右クリックで削除")
+        self.help_label = tk.Label(self.setting_frame, text="Right-click to delete")
 
         self.is_symmetry = tk.BooleanVar(value=True)
         self.check_button_symmetry = tk.Checkbutton(
-            self.setting_frame, text="対称", variable=self.is_symmetry
+            self.setting_frame, text="symmetry", variable=self.is_symmetry
         )
 
         self.is_rule = tk.BooleanVar(value=True)
         self.check_button_rule = tk.Checkbutton(
-            self.setting_frame, text="ルール", variable=self.is_rule, command=self.changed_rule_check_button
+            self.setting_frame, text="rule", variable=self.is_rule, command=self.changed_rule_check_button
         )
 
         self.turn_var = tk.StringVar(value="100")
@@ -84,10 +84,10 @@ class Window(tk.Frame):
         )
 
         self.loading_button = tk.Button(
-            self.setting_frame, text="読み込み", command=self.load
+            self.setting_frame, text="load", command=self.load
         )
         self.write_button = tk.Button(
-            self.setting_frame, text="書き込み", command=self.save
+            self.setting_frame, text="save", command=self.save
         )
 
         self.radio_frame.pack()
@@ -153,12 +153,12 @@ class Window(tk.Frame):
 
     def save(self):
         if self.place_cool == [-1, -1] or self.place_hot == [-1, -1]:
-            showerror("Map Edit", "クライアントが配置されていません")
+            showerror("Map Edit", "Client not located")
             return
         file = asksaveasfile(
             "w",
             initialdir=self.config["StagePath"],
-            filetypes=[("マップ", ".json")],
+            filetypes=[("map", ".json")],
             defaultextension="json",
             initialfile=self.file_name,
         )
@@ -174,7 +174,7 @@ class Window(tk.Frame):
     def load(self):
         file = askopenfile(
             initialdir=self.config["StagePath"],
-            filetypes=[("マップ", ".json")],
+            filetypes=[("map", ".json")],
             defaultextension="json",
         )
         if file is not None:
@@ -193,7 +193,7 @@ class Window(tk.Frame):
 
                 self.file_name = os.path.splitext(os.path.basename(file.name))[0]
             except KeyError:
-                showerror("Map Edit", "間違ったファイルを読み込みました。")
+                showerror("Map Edit", "The wrong file was loaded.")
 
     def symmetry_place(self, x, y):
         return 14 - x, 16 - y
