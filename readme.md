@@ -10,7 +10,7 @@
 現在制作中に付き、まだ確定していません。
 
 Githubのリポジトリをダウンロード後、launch.batで起動できます。
-python3.11.3で動作確認をしました。
+python3.11.3,WSL:Ubuntuで動作確認をしました。
 
 [~~ダウンロードリンク~~](https://github.com/piroping/CHaserServer-HakodateBeta-/releases/download/release/HakodateCHaserBeta.zip)
 
