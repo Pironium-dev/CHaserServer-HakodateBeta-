@@ -203,7 +203,7 @@ class Game:
         pipe.send("t")
         if pipe.recv() != "ok":
             self.game_set(cl, 5, turn)
-        if cl == 'Cool':
+        if cl == "Cool":
             pipe.send(self.output_square(True, *self.cool_place))
         else:
             pipe.send(self.output_square(True, *self.hot_place))
@@ -233,16 +233,19 @@ class Game:
                         item += 1
                         self.map[next_place[1]][next_place[0]] = 0
                         self.map[place[1]][place[0]] = 2
-                if is_getted_item:
-                    self.window_pipe.send("i")
-                else:
+                        self.window_pipe.send("i")
+                        if self.enclosed(*enemy_place):
+                            self.game_set(cl, 2, turn)
+                        elif self.enclosed(*next_place):
+                            self.game_set(cl, 3, turn)
+                if not is_getted_item:
                     self.window_pipe.send("n")
 
             case "p":
                 place[0] += Game.direction[r[1]][0]
                 place[1] += Game.direction[r[1]][1]
                 self.window_pipe.send(place)
-                if cl == 'Cool':
+                if cl == "Cool":
                     self.cool_place = next_place.copy()
                 else:
                     self.hot_place = next_place.copy()
@@ -480,7 +483,6 @@ class Receiver:
         start = time.time()
         r = ""
         while True:
-            
             if self.pipe.poll() and self.pipe.recv() == "d":
                 self.close()
             elif time.time() - start >= self.timeout / 1000:

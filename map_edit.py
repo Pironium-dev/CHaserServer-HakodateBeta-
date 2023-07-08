@@ -17,7 +17,7 @@ class Window(tk.Frame):
         self.place_cool = [-1, -1]
 
         self.file_name = ""
-        
+
         self.changed_rule_check_button()
 
     def write_screen(self):
@@ -74,7 +74,10 @@ class Window(tk.Frame):
 
         self.is_rule = tk.BooleanVar(value=True)
         self.check_button_rule = tk.Checkbutton(
-            self.setting_frame, text="ルール", variable=self.is_rule, command=self.changed_rule_check_button
+            self.setting_frame,
+            text="ルール",
+            variable=self.is_rule,
+            command=self.changed_rule_check_button,
         )
 
         self.turn_var = tk.StringVar(value="100")
@@ -180,6 +183,7 @@ class Window(tk.Frame):
         if file is not None:
             try:
                 d = json.load(file)
+                self.map = self.convert(d["Map"])
                 for i, x in enumerate(self.convert(d["Map"])):
                     for j, y in enumerate(x):
                         self.canvas.delete(f"{i}_{j}")
