@@ -242,7 +242,10 @@ class Game:
                 place[0] += Game.direction[r[1]][0]
                 place[1] += Game.direction[r[1]][1]
                 self.window_pipe.send(place)
-                self.cool_place = next_place.copy()
+                if cl == 'Cool':
+                    self.cool_place = next_place.copy()
+                else:
+                    self.hot_place = next_place.copy()
                 if 0 <= place[0] <= 14 and 0 <= place[1] <= 16:
                     self.map[place[1]][place[0]] = 2
                 pipe.send((c := self.output_square(True, *next_place)))
