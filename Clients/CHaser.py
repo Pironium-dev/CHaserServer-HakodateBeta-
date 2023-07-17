@@ -6,9 +6,13 @@ import sys
 class Client:
     def __init__(self):
         if len(sys.argv) == 1:
+            '''
             self.port = input('ポート番号を入力してください ⇒ ')
             self.name = input('名前を入力してください ⇒ ')
-            self.host = input('IPアドレスを入力してください ⇒ ')
+            self.host = input('IPアドレスを入力してください ⇒ ')'''
+            self.port = '2010'
+            self.name = 'name'
+            self.host = '127.0.0.1'
         else:
             self.port, self.name, self.host = sys.argv[1:]
 
