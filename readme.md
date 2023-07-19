@@ -7,16 +7,14 @@
 
 ## インストール
 
-現在制作中に付き、まだ確定していません。
-
-Githubのリポジトリをダウンロード後、launch.batで起動できます。
+Githubのリポジトリをダウンロード後、launch.batでサーバを起動できます。
 python3.11.3で動作確認をしました。
-
-[~~ダウンロードリンク~~](https://github.com/piroping/CHaserServer-HakodateBeta-/releases/download/release/HakodateCHaserBeta.zip)
 
 ## 使い方
 
-![explanation](explanation.png)
+### サーバ
+
+![explanation](pictures/explanation.png)
 
 1. クライアント設定  
     左から、ポート番号、モード、待機接続ボタン  
@@ -36,3 +34,26 @@ python3.11.3で動作確認をしました。
     設定のリセット:上記の設定をすべてリセットします。
 6. ゲーム開始  
     クライアントがすべて接続した後使うことができます。  
+
+### クライアントハンドラ
+
+![handler](pictures/handler.png)
+
+1. ポート番号  
+   接続する先のポートを指定します。（右も同様）
+2. ファイル名  
+   ./Clients/内にあるプログラムを指定します。（右も同様）
+3. IPアドレス  
+   接続先のIPアドレスを指定します
+4. 反転ボタン  
+   ポート番号のみを入れ替えます。
+5. 実行ボタン  
+   指定されたファイルを実行します。
+6. 状態表示  
+   idle: 待機中
+   running: 実行中
+
+### マップ変換
+
+./util/内にあります。
+選択された.mapファイルを.jsonに変換します。 ./map/内に配置されます。

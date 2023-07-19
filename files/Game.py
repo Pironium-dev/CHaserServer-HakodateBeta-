@@ -2,7 +2,6 @@ import multiprocessing
 import threading
 import json
 import time
-import ReadConfig
 from typing import NoReturn
 import os
 import socket
@@ -18,7 +17,6 @@ class Game:
     }
 
     def __init__(self, pipe) -> None:
-        ReadConfig.ReadConfig().d["StagePath"]
         self.cool_items = 0
         self.hot_items = 0
         self.cool_name = ""

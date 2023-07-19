@@ -19,5 +19,5 @@ if file != '':
                     out['Hot'] = [int(j) for j in i[2:].rstrip().split(',')]
 
 
-    with open(os.path.splitext(os.path.basename(file))[0] + '.CHmap', 'w') as f:
+    with open('./maps/' + os.path.splitext(os.path.basename(file))[0] + '.json', 'w') as f:
         json.dump(out, f)
