@@ -479,6 +479,7 @@ class Game_Window(tk.Frame):
         # ゲームの停止も担当する
         if self.cool_state == self.hot_state == 2:
             if not self.is_game_started:
+                self.points = {"Cool": 0, "Hot": 0}
                 self.menu_game_start["text"] = "ゲーム停止"
 
                 self.menu_button_cool["state"] = "disable"  # to do
