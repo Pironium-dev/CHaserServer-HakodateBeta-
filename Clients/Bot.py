@@ -63,6 +63,8 @@ class Extended_client(Client):
                 self.write_map(x + j[0], y + j[1], i)
 
     def write_map(self, x, y, c):
+        if c == ENEMY:
+            c = BLANK
         if 0 <= x <= 16 and 0 <= y <= 14:
             self.map[x][y] = c
             self.check_never(x, y)
