@@ -10,7 +10,7 @@ class Client:
             self.port = input('ポート番号を入力してください ⇒ ')
             self.name = input('名前を入力してください ⇒ ')
             self.host = input('IPアドレスを入力してください ⇒ ')'''
-            self.port = '2010'
+            self.port = '2009'
             self.name = 'name'
             self.host = '127.0.0.1'
         else:
