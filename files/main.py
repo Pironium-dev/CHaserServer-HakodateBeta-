@@ -27,7 +27,7 @@ class Game_Window(tk.Frame):
         self.is_game_started = False
 
         tk.Frame.__init__(self, master=master)
-        master.title("CHaser")
+        master.title("CHaser ver1.0")
         master.protocol("WM_DELETE_WINDOW", self.save_config)
 
         self.points = {"Cool": 0, "Hot": 0}
