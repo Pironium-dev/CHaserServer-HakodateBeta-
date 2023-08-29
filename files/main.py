@@ -398,8 +398,6 @@ class Game_Window(tk.Frame):
         self.cool_disconnect()
         self.menu_settings_speed_ver.set(config.d["GameSpeed"])
         self.menu_settings_timeout_ver.set(config.d["TimeOut"])
-        self.menu_hot_combobox.set(config.d["HotMode"])
-        self.menu_cool_combobox.set(config.d["CoolMode"])
         self.menu_map_ver.set(config.d["NextMap"])
         self.menu_settings_ver_log.set(config.d["Log"])
         self.menu_settings_ver_score.set(config.d["Score"])
