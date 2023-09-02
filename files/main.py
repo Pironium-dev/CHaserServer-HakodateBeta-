@@ -320,12 +320,25 @@ class Game_Window(tk.Frame):
         )
         self.menu_settings_button_reset.grid(row=4, column=0, columnspan=2)
 
+        ttk.Separator(self.menu_frame_settings).grid(
+            row=1, columnspan=2, sticky="ew", pady=3
+        )
+        ttk.Separator(self.menu_frame_settings).grid(
+            row=4, columnspan=2, sticky="ew", pady=3
+        )
+        ttk.Separator(self.menu_frame_settings).grid(
+            row=6, columnspan=2, sticky="ew", pady=3
+        )
+
         self.menu_settings_box_log.grid(row=0, column=0)
         self.menu_settings_box_score.grid(row=0, column=1)
-        self.menu_settings_label_timeout.grid(row=1, column=0)
-        self.menu_settings_spinbox_timeout.grid(row=2, column=0)
-        self.menu_settings_label_speed.grid(row=1, column=1)
-        self.menu_settings_spinbox_speed.grid(row=2, column=1)
+        self.menu_settings_label_timeout.grid(row=2, column=0)
+        self.menu_settings_spinbox_timeout.grid(row=3, column=0)
+        self.menu_settings_label_speed.grid(row=2, column=1)
+        self.menu_settings_spinbox_speed.grid(row=3, column=1)
+        self.menu_settings_button_log.grid(row=5, column=0)
+        self.menu_settings_button_map.grid(row=5, column=1)
+        self.menu_settings_button_reset.grid(row=7, column=0, columnspan=2)
 
         # game_start
         self.menu_game_start = ttk.Button(
