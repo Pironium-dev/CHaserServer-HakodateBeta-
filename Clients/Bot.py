@@ -252,7 +252,6 @@ bot.memorize_look(c, bot.x, bot.y, True)
 turn = 0
 while True:
     output()
-    
     turn += 1
     if kill_enemy(bot.get_ready()):
         # 幅優先探索

@@ -320,12 +320,25 @@ class Game_Window(tk.Frame):
         )
         self.menu_settings_button_reset.grid(row=4, column=0, columnspan=2)
 
+        ttk.Separator(self.menu_frame_settings).grid(
+            row=1, columnspan=2, sticky="ew", pady=3
+        )
+        ttk.Separator(self.menu_frame_settings).grid(
+            row=4, columnspan=2, sticky="ew", pady=3
+        )
+        ttk.Separator(self.menu_frame_settings).grid(
+            row=6, columnspan=2, sticky="ew", pady=3
+        )
+
         self.menu_settings_box_log.grid(row=0, column=0)
         self.menu_settings_box_score.grid(row=0, column=1)
-        self.menu_settings_label_timeout.grid(row=1, column=0)
-        self.menu_settings_spinbox_timeout.grid(row=2, column=0)
-        self.menu_settings_label_speed.grid(row=1, column=1)
-        self.menu_settings_spinbox_speed.grid(row=2, column=1)
+        self.menu_settings_label_timeout.grid(row=2, column=0)
+        self.menu_settings_spinbox_timeout.grid(row=3, column=0)
+        self.menu_settings_label_speed.grid(row=2, column=1)
+        self.menu_settings_spinbox_speed.grid(row=3, column=1)
+        self.menu_settings_button_log.grid(row=5, column=0)
+        self.menu_settings_button_map.grid(row=5, column=1)
+        self.menu_settings_button_reset.grid(row=7, column=0, columnspan=2)
 
         # game_start
         self.menu_game_start = ttk.Button(
@@ -396,12 +409,8 @@ class Game_Window(tk.Frame):
         config.reset()
         self.hot_disconnect()
         self.cool_disconnect()
-        self.menu_port_ver_cool.set(config.d["CoolPort"])
-        self.menu_port_ver_hot.set(config.d["HotPort"])
         self.menu_settings_speed_ver.set(config.d["GameSpeed"])
         self.menu_settings_timeout_ver.set(config.d["TimeOut"])
-        self.menu_hot_combobox.set(config.d["HotMode"])
-        self.menu_cool_combobox.set(config.d["CoolMode"])
         self.menu_map_ver.set(config.d["NextMap"])
         self.menu_settings_ver_log.set(config.d["Log"])
         self.menu_settings_ver_score.set(config.d["Score"])
