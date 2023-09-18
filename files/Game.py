@@ -385,6 +385,8 @@ class Receiver:
 
         self.flag_error = False
 
+        self.client_popen = None
+
         while True:
             if self.pipe.poll():
                 match self.pipe.recv():
@@ -400,6 +402,10 @@ class Receiver:
                             self.socket.listen()
                         self.flag_socket = True
                     case "d":  # dis-connect
+                        try:
+                            self.client_popen.kill() # type: ignore
+                        except AttributeError:
+                            pass
                         self.mode = "User"
                         self.to_client_socket.close()
                         self.flag_socket = False
@@ -477,7 +483,6 @@ class Receiver:
         start = time.time()
         r = ""
         while True:
-            
             if self.pipe.poll() and self.pipe.recv() == "d":
                 self.close()
             elif time.time() - start >= self.timeout / 1000:
@@ -507,7 +512,8 @@ class Receiver:
         exit()
 
     def execute_client(self, port):
-        subprocess.Popen(
+        self.client_popen = subprocess.Popen(
+            "exec python3 " + 
             os.path.abspath("./Clients/Bot.py")
             + " "
             + " ".join([str(port), "Bot", "127.0.0.1"]),
