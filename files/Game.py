@@ -513,6 +513,7 @@ class Receiver:
 
     def execute_client(self, port):
         subprocess.Popen(
+            "python " +
             os.path.abspath("./Clients/Bot.py")
             + " "
             + " ".join([str(port), "Bot", "127.0.0.1"]),
