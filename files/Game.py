@@ -434,6 +434,7 @@ class Receiver:
 
             if self.flag_to_client_socket:
                 try:
+                    self.flag_to_client_socket = False
                     c = self.to_client_socket.recv(4096)
                     self.pipe.send("connect")
                     self.pipe.send(c.decode("utf-8").strip())
