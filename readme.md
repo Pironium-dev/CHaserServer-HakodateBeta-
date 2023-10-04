@@ -7,8 +7,9 @@
 
 ## インストール
 
-Githubのリポジトリをダウンロード後、launch.shで起動できます。
-python3.11.3,WSL:Ubuntuで動作確認をしました。
+右のReleasesからダウンロードできます。  
+python3.11.3,WSL:Ubuntuで動作確認をしました。  
+Macosでは動作確認できていません。
 
 ## 使い方
 
