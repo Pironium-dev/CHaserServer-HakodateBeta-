@@ -11,7 +11,7 @@ Githubのリポジトリをダウンロード後、launch.batでサーバを起�
 
 + Windows版  
 python3.11.3で動作確認をしました。  
-+ Linux版  
++ Linux&Mac版  
 python3.11.3,WSL:Ubuntuで動作確認をしました。  
 Macでは動作確認できていません。
 
