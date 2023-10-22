@@ -7,13 +7,13 @@
 
 ## インストール
 
-Releacesからダウンロード後、launch.batでサーバを起動できます。  
+Releacesからダウンロード後、launch.batまたはlaunch.shでサーバを起動できます。  
 
 + Windows版  
 python3.11.3で動作確認をしました。  
 + Linux&Mac版  
 python3.11.3,WSL:Ubuntu,Macで動作確認をしました。  
-Linux&Macの場合、以下のコードでtkinterをインストールしてください。
+使用するには、以下のコードでtkinterをインストールしてください。
 ```terminal
 brew install python-tk@3.11
 ```
