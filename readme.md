@@ -17,7 +17,10 @@ python3.11.3,WSL:Ubuntu,Macで動作確認をしました。
 ```terminal
 brew install python-tk@3.11
 ```
-
+また、launch.shに以下のコードで実行権限を付与してください
+```
+chmod +x launch.sh
+```
 また、はじめから2022年の函館大会で使用されたマップが入っています。
 
 ## 使い方
