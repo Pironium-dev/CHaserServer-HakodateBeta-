@@ -14,13 +14,17 @@ python3.11.3で動作確認をしました。
 + Linux&Mac版  
 python3.11.3,WSL:Ubuntu,Macで動作確認をしました。  
 使用するには、以下のコードでtkinterをインストールしてください。
+
 ```terminal
 brew install python-tk@3.11
 ```
+
 また、launch.shに以下のコードで実行権限を付与してください
-```
+
+```terminal
 chmod +x launch.sh
 ```
+
 また、はじめから2022年の函館大会で使用されたマップが入っています。
 
 ## 使い方
