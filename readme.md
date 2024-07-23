@@ -49,7 +49,7 @@ chmod +x launch.sh
 
 ## 画面の説明
 
-### サーバ
+### サーバー
 
 ![explanation](pictures/explanation.png)
 
