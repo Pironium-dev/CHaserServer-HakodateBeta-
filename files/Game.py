@@ -400,7 +400,10 @@ class Receiver:
                             if self.mode == "Bot":
                                 self.execute_client(self.port)
                             self.socket.setblocking(False)
-                            self.socket.bind(("", int(self.port)))
+                            if self.mode == 'User':
+                                self.socket.bind((socket.gethostbyname(socket.gethostname()), int(self.port)))
+                            else:
+                                self.socket.bind(('127.0.0.1', int(self.port)))
                             self.socket.listen()
                         self.flag_socket = True
                     case "d":  # dis-connect
