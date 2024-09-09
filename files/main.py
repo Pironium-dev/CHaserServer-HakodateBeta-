@@ -835,7 +835,7 @@ if __name__ == "__main__":
     config = ReadConfig.ReadConfig()
 
     root = tk.Tk()
-    root.geometry("680x450")
+
     root.resizable(False, False)
     game_window = Game_Window(root)
 
