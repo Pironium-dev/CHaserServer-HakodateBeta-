@@ -54,7 +54,6 @@ class Game:
         self.hot_receiver.start()
 
         while True:
-            # Hot
             if self.window_pipe.poll():
                 match self.window_pipe.recv():
                     case "C":
@@ -125,6 +124,10 @@ class Game:
                         self.cool_name = c
                     self.window_pipe.send(pipe.recv())
                 case "d":
+                    if cl == "Hot":
+                        self.hot_disconnect()
+                    else:
+                        self.cool_disconnect()
                     self.window_pipe.send(cl)
                     self.window_pipe.send("disconnect")
 
@@ -389,6 +392,8 @@ class Receiver:
 
         self.flag_error = False
 
+        self.flag_closed = False  # socket_revceive内でcloseが呼ばれたかどうか
+
         while True:
             if self.pipe.poll():
                 match self.pipe.recv():
@@ -400,10 +405,15 @@ class Receiver:
                             if self.mode == "Bot":
                                 self.execute_client(self.port)
                             self.socket.setblocking(False)
-                            if self.mode == 'User':
-                                self.socket.bind((socket.gethostbyname(socket.gethostname()), int(self.port)))
+                            if self.mode == "User":
+                                self.socket.bind(
+                                    (
+                                        socket.gethostbyname(socket.gethostname()),
+                                        int(self.port),
+                                    )
+                                )
                             else:
-                                self.socket.bind(('127.0.0.1', int(self.port)))
+                                self.socket.bind(("127.0.0.1", int(self.port)))
                             self.socket.listen()
                         self.flag_socket = True
                     case "d":  # dis-connect
@@ -459,6 +469,7 @@ class Receiver:
             while True:
                 if self.flag_error:
                     self.close()
+                    break
                 match pipe.recv():
                     case "t":  # your turn
                         try:
@@ -467,16 +478,25 @@ class Receiver:
                             )  # Error ConnectionResetError
                             if self.socket_receive() != "gr":
                                 self.close()
+                                break
                             self.pipe.send("ok")
                             self.to_client_socket.send(self.pipe.recv().encode("utf-8"))
-                            self.pipe.send(self.socket_receive())
+                            temp = self.socket_receive()
+                            if self.flag_closed:
+                                self.flag_closed = False
+                                break
+                            self.pipe.send(temp)
                             self.to_client_socket.send(self.pipe.recv().encode("utf-8"))
                             if self.socket_receive() != "#":
                                 self.close()
+                                break
+
                         except ConnectionResetError:
                             self.close()
+                            break
                     case "d":
                         self.close()
+                        break
         except EOFError:  # ゲーム終了時
             pass
 
@@ -486,8 +506,12 @@ class Receiver:
         while True:
             if self.pipe.poll() and self.pipe.recv() == "d":
                 self.close()
+                self.flag_closed = True
+                return
             elif time.time() - start >= self.timeout / 1000:
                 self.close()
+                self.flag_closed = True
+                return
             try:
                 c = self.to_client_socket.recv(4096)
                 r = c.decode("utf-8").strip()
@@ -495,22 +519,27 @@ class Receiver:
                 continue
             except ConnectionAbortedError:
                 self.close()
+                self.flag_closed = True
+                return
             if r == "":
                 self.close()
+                self.flag_closed = True
+                return
             return r
 
     def close(self):
-        self.flag_ended = True
+        self.flag_ended = False
         self.flag_socket = False
         self.flag_to_client_socket = False
         self.flag_bot_name = False
-        self.to_client_socket.shutdown(socket.SHUT_RDWR)
+        self.socket.close()
+        self.socket = socket.socket()
         self.to_client_socket.close()
+        self.to_client_socket = socket.socket()
         try:
             self.pipe.send("Cl")
         except BrokenPipeError:
             pass
-        exit()
 
     def execute_client(self, port):
         subprocess.Popen(
